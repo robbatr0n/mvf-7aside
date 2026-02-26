@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useEvents } from '../../hooks/useEvents'
 import EventLog from './EventLog'
 import GoalModal from './GoalModal'
-import type { EventType, Game, Player } from '../../types'
+import type { Game, Player } from '../../types'
 
 interface Props {
   game: Game
