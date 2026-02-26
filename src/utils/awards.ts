@@ -1,4 +1,4 @@
-import type { Event, Game, GamePlayer, Player, PlayerStats } from '../types'
+import type { Event, Game, GamePlayer, PlayerStats } from '../types'
 
 export interface Award {
     emoji: string
@@ -28,12 +28,6 @@ function topN(stats: PlayerStats[], key: keyof PlayerStats, n = 1): PlayerStats[
     return sorted.filter(s => s[key] === best).slice(0, n)
 }
 
-function bottomN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
-    const sorted = [...stats].sort((a, b) => (a[key] as number) - (b[key] as number))
-    const worst = sorted[0]?.[key]
-    if (worst === undefined) return []
-    return sorted.filter(s => s[key] === worst)
-}
 
 export function calculateAwards(
     stats: PlayerStats[],
