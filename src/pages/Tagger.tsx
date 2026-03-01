@@ -120,6 +120,7 @@ export default function Tagger() {
     <EventLogger
       game={game!}
       activePlayers={activePlayers}
+      teamAssignments={teamAssignments}
       onFinish={() => setPhase('result')}
     />
   )

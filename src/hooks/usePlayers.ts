@@ -23,11 +23,10 @@ export function usePlayers() {
     }
   }
 
-  async function createPlayer(name: string) {
-    const player = await addPlayer(name)
-    setPlayers(prev => [...prev, player].sort((a, b) => a.name.localeCompare(b.name)))
+  async function createPlayer(name: string, isGuest = false) {
+    const player = await addPlayer(name, isGuest)
+    setPlayers(prev => [...prev, player])
     return player
   }
-
   return { players, loading, error, createPlayer, refresh: fetch }
 }

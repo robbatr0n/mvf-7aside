@@ -128,6 +128,7 @@ export function calculateAllPlayerStats(
   gamePlayers: GamePlayer[]
 ): PlayerStats[] {
   return players
+    .filter(p => !p.is_guest)
     .map(player => calculatePlayerStats(player, events, games, gamePlayers))
     .sort((a, b) => b.goals - a.goals)
 }
@@ -135,7 +136,9 @@ export function calculateAllPlayerStats(
 export interface GoalEntry {
   scorer: Player
   assister: Player | null
+  team_override: number | null
 }
+
 
 export interface GameSummary {
   game: Game
@@ -210,13 +213,11 @@ export function calculateGameSummaries(
     const goalEvents = gameEvents.filter(e => e.event_type === 'goal')
     const assistEvents = gameEvents.filter(e => e.event_type === 'assist')
 
-    // Pair goals with assists by proximity in created_at
     const usedAssistIds = new Set<string>()
     const goalEntries: GoalEntry[] = goalEvents.map(goal => {
       const scorer = players.find(p => p.id === goal.player_id) ?? null
       if (!scorer) return null
 
-      // Find closest assist event after this goal that hasn't been used
       const goalTime = new Date(goal.created_at).getTime()
       const matchedAssist = assistEvents
         .filter(a => !usedAssistIds.has(a.id))
@@ -231,15 +232,22 @@ export function calculateGameSummaries(
         ? players.find(p => p.id === matchedAssist.player_id) ?? null
         : null
 
-      return { scorer, assister }
+      return {
+        scorer,
+        assister,
+        team_override: goal.team_override ?? null,
+      }
     }).filter(Boolean) as GoalEntry[]
 
-    const team1Goals = goalEntries.filter(g =>
-      team1Players.some(p => p.id === g.scorer.id)
-    )
-    const team2Goals = goalEntries.filter(g =>
-      team2Players.some(p => p.id === g.scorer.id)
-    )
+    const team1Goals = goalEntries.filter(g => {
+      if (g.team_override !== null) return g.team_override === 1
+      return team1Players.some(p => p.id === g.scorer.id)
+    })
+
+    const team2Goals = goalEntries.filter(g => {
+      if (g.team_override !== null) return g.team_override === 2
+      return team2Players.some(p => p.id === g.scorer.id)
+    })
 
     return {
       game,

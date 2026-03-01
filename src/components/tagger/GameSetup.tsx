@@ -40,7 +40,7 @@ export default function GameSetup({ onReady }: Props) {
     setSetupPhase('teams')
   }
 
-  async function handleAddPlayer() {
+  async function handleAddPlayer(isGuest = false) {
     if (!newPlayerName.trim()) return
     const player = await createPlayer(newPlayerName.trim())
     setSelectedIds(prev => new Set(prev).add(player.id))
@@ -205,8 +205,8 @@ export default function GameSetup({ onReady }: Props) {
                     key={player.id}
                     onClick={() => togglePlayer(player.id)}
                     className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${selected
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'bg-gray-900 border border-gray-800 text-gray-300 hover:border-gray-600'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                      : 'bg-gray-900 border border-gray-800 text-gray-300 hover:border-gray-600'
                       }`}
                   >
                     {player.name}
@@ -226,11 +226,19 @@ export default function GameSetup({ onReady }: Props) {
               className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-600 transition-colors"
             />
             <button
-              onClick={handleAddPlayer}
+              onClick={() => handleAddPlayer(false)}
               disabled={!newPlayerName.trim()}
               className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white rounded-xl px-5 py-3 text-sm font-medium transition-colors"
             >
               Add
+            </button>
+            <button
+              onClick={() => handleAddPlayer(true)}
+              disabled={!newPlayerName.trim()}
+              className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-400 rounded-xl px-4 py-3 text-sm font-medium transition-colors"
+              title="Add as guest — hidden from stats until promoted"
+            >
+              Guest
             </button>
           </div>
         </section>

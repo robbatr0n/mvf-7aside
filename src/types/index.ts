@@ -8,6 +8,8 @@ export type EventType =
 export interface Player {
   id: string
   name: string
+  is_guest: boolean
+  exclude_from_awards: boolean
   created_at: string
 }
 
@@ -30,6 +32,7 @@ export interface Event {
   game_id: string
   player_id: string
   event_type: EventType
+  team_override: number | null
   created_at: string
 }
 

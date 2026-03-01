@@ -9,15 +9,20 @@ function GoalList({ goals, align }: { goals: GoalEntry[], align: 'left' | 'right
     if (goals.length === 0) return null
 
     return (
-        <div className={`space-y-1 ${align === 'right' ? 'text-right' : 'text-left'}`}>
+        <div className={`space-y-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
             {goals.map((g, i) => (
                 <div key={i}>
                     <span className="text-white text-sm font-medium">
-                        ⚽ {g.scorer.name}
+                        ⚽ {g.scorer.is_guest ? 'Guest' : g.scorer.name}
+                        {g.team_override !== null && (
+                            <span className="text-gray-500 text-xs ml-1.5" title="Scored after switching teams">
+                                ↔
+                            </span>
+                        )}
                     </span>
                     {g.assister && (
                         <p className={`text-gray-500 text-xs ${align === 'right' ? 'text-right' : 'text-left'}`}>
-                            assist: {g.assister.name}
+                            assist: {g.assister.is_guest ? 'Guest' : g.assister.name}
                         </p>
                     )}
                 </div>
@@ -55,19 +60,31 @@ export default function GameBreakdown({ summaries }: Props) {
                     >
                         ← Older
                     </button>
-                    <div className="text-center">
+
+                    <div className="text-center space-y-1">
                         <p className="text-gray-400 text-sm">
-                            {new Date(game.date).toLocaleDateString('en-GB', {
+                            {new Date(current.game.date).toLocaleDateString('en-GB', {
                                 weekday: 'long',
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',
                             })}
                         </p>
-                        <p className="text-gray-600 text-xs mt-0.5">
-                            Game {summaries.length - index} of {summaries.length}
-                        </p>
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="text-gray-600 text-xs">
+                                Game {summaries.length - index} of {summaries.length}
+                            </span>
+                            {index > 0 && (
+                                <button
+                                    onClick={() => setIndex(0)}
+                                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                    Latest →
+                                </button>
+                            )}
+                        </div>
                     </div>
+
                     <button
                         onClick={() => setIndex(i => i - 1)}
                         disabled={index === 0}
@@ -127,16 +144,19 @@ export default function GameBreakdown({ summaries }: Props) {
                 {/* Dot navigation */}
                 {summaries.length > 1 && (
                     <div className="flex items-center justify-center gap-1.5 pb-4">
-                        {summaries.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setIndex(i)}
-                                className={`rounded-full transition-all ${i === index
+                        {[...summaries].reverse().map((_, i) => {
+                            const reversedIndex = summaries.length - 1 - i
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => setIndex(reversedIndex)}
+                                    className={`rounded-full transition-all ${reversedIndex === index
                                         ? 'bg-blue-500 w-4 h-1.5'
                                         : 'bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5'
-                                    }`}
-                            />
-                        ))}
+                                        }`}
+                                />
+                            )
+                        })}
                     </div>
                 )}
             </div>

@@ -44,8 +44,8 @@ export default function PlayerProfile() {
   }, [id, events, games, gamePlayers])
 
   const { awards, partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers),
-    [stats, events, games, gamePlayers]
+    () => calculateAwards(stats, events, games, gamePlayers, players),
+    [stats, events, games, gamePlayers, players]
   )
 
   const myAwards = useMemo(() => {
@@ -239,8 +239,8 @@ export default function PlayerProfile() {
                     <span
                       key={i}
                       className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${result === 'W' ? 'bg-green-900/60 text-green-400' :
-                          result === 'L' ? 'bg-red-900/60 text-red-400' :
-                            'bg-gray-800 text-gray-400'
+                        result === 'L' ? 'bg-red-900/60 text-red-400' :
+                          'bg-gray-800 text-gray-400'
                         }`}
                     >
                       {result}

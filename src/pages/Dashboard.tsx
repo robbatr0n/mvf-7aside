@@ -5,6 +5,7 @@ import { useGames } from '../hooks/useGames'
 import { useGamePlayers } from '../hooks/useGamePlayers'
 import { useStats } from '../hooks/useStats'
 import { calculateGameSummaries } from '../utils/stats'
+import { calculateAwards } from '../utils/awards'
 import AwardCards from '../components/dashboard/AwardCards'
 import Leaderboard from '../components/dashboard/Leaderboard'
 import GameBreakdown from '../components/dashboard/GameBreakdown'
@@ -14,11 +15,16 @@ export default function Dashboard() {
   const { events, loading: eventsLoading } = useEvents()
   const { games, loading: gamesLoading } = useGames()
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers()
-  const { stats, hatTrickHero } = useStats(players, events, games, gamePlayers)
+  const { stats } = useStats(players, events, games, gamePlayers)
 
   const gameSummaries = useMemo(
     () => calculateGameSummaries(games, players, events, gamePlayers),
     [games, players, events, gamePlayers]
+  )
+
+  const { partnership } = useMemo(
+    () => calculateAwards(stats, events, games, gamePlayers, players),
+    [stats, events, games, gamePlayers, players]
   )
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading
@@ -39,7 +45,7 @@ export default function Dashboard() {
           <><p className="text-gray-600 text-xs">
             {games.length} {games.length === 1 ? 'game' : 'games'} tracked
           </p>
-            <AwardCards stats={stats} hatTrickHero={hatTrickHero} />
+            <AwardCards stats={stats} partnership={partnership} />
             <Leaderboard stats={stats} />
             <GameBreakdown summaries={gameSummaries} />
           </>

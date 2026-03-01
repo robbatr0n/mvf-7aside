@@ -1,4 +1,4 @@
-import type { Event, Game, GamePlayer, PlayerStats } from '../types'
+import type { Event, Game, GamePlayer, PlayerStats, Player } from '../types'
 
 export interface Award {
     emoji: string
@@ -21,21 +21,22 @@ export interface PartnershipAward {
 const MIN_GAMES = 3
 const MIN_SHOTS = 5
 
-function topN(stats: PlayerStats[], key: keyof PlayerStats, n = 1): PlayerStats[] {
+function topN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
     const sorted = [...stats].sort((a, b) => (b[key] as number) - (a[key] as number))
     const best = sorted[0]?.[key]
-    if (!best) return []
-    return sorted.filter(s => s[key] === best).slice(0, n)
+    if (best === undefined || best === 0) return []
+    return sorted.filter(s => s[key] === best)
 }
-
 
 export function calculateAwards(
     stats: PlayerStats[],
     events: Event[],
     games: Game[],
-    gamePlayers: GamePlayer[]
+    gamePlayers: GamePlayer[],
+    players: Player[]
 ): { awards: Award[]; partnership: PartnershipAward | null } {
 
+    const eligibleStats = stats.filter(s => !s.player.exclude_from_awards)
     const qualified = stats.filter(s => s.games_played >= MIN_GAMES)
     const shotQualified = stats.filter(s => s.shots_on_target + s.shots_off_target >= MIN_SHOTS)
 
@@ -97,7 +98,7 @@ export function calculateAwards(
         noWinner: creators[0]?.key_passes === 0,
     }
 
-    // Clinical — best shot conversion, min 5 shots
+    // Clinical
     const clinicalSorted = [...shotQualified].sort((a, b) => b.shot_conversion - a.shot_conversion)
     const bestConversion = clinicalSorted[0]?.shot_conversion
     const clinicalWinners = clinicalSorted.filter(s => s.shot_conversion === bestConversion)
@@ -110,7 +111,7 @@ export function calculateAwards(
         noWinner: clinicalWinners.length === 0,
     }
 
-    // Wasteful — worst conversion, min 5 shots
+    // Wasteful
     const wastefulSorted = [...shotQualified].sort((a, b) => a.shot_conversion - b.shot_conversion)
     const worstConversion = wastefulSorted[0]?.shot_conversion
     const wastefulWinners = wastefulSorted.filter(s => s.shot_conversion === worstConversion)
@@ -123,7 +124,7 @@ export function calculateAwards(
         noWinner: wastefulWinners.length === 0,
     }
 
-    // Trigger Happy — most total shots
+    // Trigger Happy
     const totalShots = (s: PlayerStats) => s.shots_on_target + s.shots_off_target
     const triggerSorted = [...stats]
         .filter(s => totalShots(s) > 0)
@@ -139,7 +140,7 @@ export function calculateAwards(
         noWinner: triggerWinners.length === 0,
     }
 
-    // Reliable — best goals per game, min 3 games
+    // Reliable
     const reliableSorted = [...qualified].sort((a, b) => b.goals_per_game - a.goals_per_game)
     const bestGPG = reliableSorted[0]?.goals_per_game
     const reliableWinners = reliableSorted.filter(s => s.goals_per_game === bestGPG)
@@ -152,17 +153,19 @@ export function calculateAwards(
         noWinner: reliableWinners.length === 0,
     }
 
-    // Always There — most games played
+    // Always There
+    const maxGames = Math.max(...eligibleStats.map(s => s.games_played))
+    const alwaysThereWinners = eligibleStats.filter(s => s.games_played === maxGames)
     const alwaysThere: Award = {
         emoji: '🔴',
         title: 'Always There',
         description: 'Most games played',
-        winners: topN(stats, 'games_played').map(s => s.player.name),
-        value: `${topN(stats, 'games_played')[0]?.games_played ?? 0} games`,
-        noWinner: false,
+        winners: alwaysThereWinners.map(s => s.player.name),
+        value: `${maxGames} games`,
+        noWinner: alwaysThereWinners.length === 0,
     }
 
-    // One Game Wonder — best single game G+A
+    // One Game Wonder
     const bestGameByPlayer = new Map<string, number>()
     events.forEach(e => {
         if (e.event_type !== 'goal' && e.event_type !== 'assist') return
@@ -177,7 +180,14 @@ export function calculateAwards(
         if (count > current) bestSingleGame.set(playerId, count)
     })
 
-    const bestSingle = Math.max(0, ...Array.from(bestSingleGame.values()))
+    const bestSingle = Math.max(0, ...Array.from(bestSingleGame.entries())
+        .filter(([playerId]) => {
+            const player = players.find(p => p.id === playerId)
+            return player && !player.is_guest
+        })
+        .map(([, count]) => count)
+    )
+
     const wonderWinners = stats
         .filter(s => (bestSingleGame.get(s.player.id) ?? 0) === bestSingle && bestSingle > 0)
         .map(s => s.player.name)
@@ -191,7 +201,22 @@ export function calculateAwards(
         noWinner: wonderWinners.length === 0,
     }
 
-    // Winner — most wins
+    // On Fire — current scoring streak
+    const streakSorted = [...stats]
+        .filter(s => s.current_scoring_streak > 0)
+        .sort((a, b) => b.current_scoring_streak - a.current_scoring_streak)
+    const bestStreak = streakSorted[0]?.current_scoring_streak ?? 0
+    const streakWinners = streakSorted.filter(s => s.current_scoring_streak === bestStreak)
+    const onFire: Award = {
+        emoji: '🔥',
+        title: 'On Fire',
+        description: 'Longest current scoring streak',
+        winners: streakWinners.map(s => s.player.name),
+        value: `${bestStreak} game${bestStreak !== 1 ? 's' : ''} in a row`,
+        noWinner: streakWinners.length === 0,
+    }
+
+    // Winner
     const winner: Award = {
         emoji: '👑',
         title: 'Winner',
@@ -201,7 +226,7 @@ export function calculateAwards(
         noWinner: topN(stats, 'wins')[0]?.wins === 0,
     }
 
-    // Unbeaten — no losses, min 3 games
+    // Unbeaten
     const unbeatenPlayers = qualified.filter(s => s.losses === 0)
         .sort((a, b) => b.wins - a.wins)
     const mostWinsUnbeaten = unbeatenPlayers[0]?.wins
@@ -215,7 +240,7 @@ export function calculateAwards(
         noWinner: unbeatenWinners.length === 0,
     }
 
-    // Unlucky — most losses
+    // Unlucky
     const unlucky: Award = {
         emoji: '💔',
         title: 'Unlucky',
@@ -244,7 +269,7 @@ export function calculateAwards(
         noWinner: nearlyWinners.length === 0,
     }
 
-    // Boom or Bust — highest variance in G+A per game
+    // Boom or Bust
     const varianceByPlayer = new Map<string, number>()
     stats.forEach(s => {
         if (s.games_played < MIN_GAMES) return
@@ -279,7 +304,7 @@ export function calculateAwards(
         noWinner: boomBustWinners.length === 0,
     }
 
-    // Best Partnership — most common scorer/assister pair
+    // Best Partnership
     const partnerships = new Map<string, number>()
     games.forEach(game => {
         const gameEvents = events.filter(e => e.game_id === game.id)
@@ -288,6 +313,7 @@ export function calculateAwards(
 
         goalEvents.forEach(goal => {
             assistEvents.forEach(assist => {
+                if (assist.player_id === goal.player_id) return
                 if (assist.created_at <= goal.created_at) {
                     const key = [assist.player_id, goal.player_id].sort().join(':')
                     partnerships.set(key, (partnerships.get(key) ?? 0) + 1)
@@ -296,35 +322,100 @@ export function calculateAwards(
         })
     })
 
-    // On Fire — current scoring streak
-    const streakSorted = [...stats]
-        .filter(s => s.current_scoring_streak > 0)
-        .sort((a, b) => b.current_scoring_streak - a.current_scoring_streak)
-    const bestStreak = streakSorted[0]?.current_scoring_streak ?? 0
-    const streakWinners = streakSorted.filter(s => s.current_scoring_streak === bestStreak)
-    const onFire: Award = {
-        emoji: '🔥',
-        title: 'On Fire',
-        description: 'Longest current scoring streak',
-        winners: streakWinners.map(s => s.player.name),
-        value: `${bestStreak} game${bestStreak !== 1 ? 's' : ''} in a row`,
-        noWinner: streakWinners.length === 0,
-    }
-
     let bestPartnership: PartnershipAward | null = null
     if (partnerships.size > 0) {
-        const bestKey = Array.from(partnerships.entries())
-            .sort((a, b) => b[1] - a[1])[0]
-        const [id1, id2] = bestKey[0].split(':')
-        const p1 = stats.find(s => s.player.id === id1)?.player.name ?? ''
-        const p2 = stats.find(s => s.player.id === id2)?.player.name ?? ''
-        bestPartnership = {
-            emoji: '🤝',
-            title: 'Best Partnership',
-            description: 'Most common goal + assist combination',
-            players: [p1, p2],
-            value: `${bestKey[1]} time${bestKey[1] > 1 ? 's' : ''}`,
+        const sortedPartnerships = Array.from(partnerships.entries())
+            .sort((a, b) => b[1] - a[1])
+
+        for (const [key, count] of sortedPartnerships) {
+            const [id1, id2] = key.split(':')
+
+            const p1Player = stats.find(s => s.player.id === id1)?.player
+                ?? players.find(p => p.id === id1)
+            const p2Player = stats.find(s => s.player.id === id2)?.player
+                ?? players.find(p => p.id === id2)
+
+            if (p1Player && p2Player && !p1Player.is_guest && !p2Player.is_guest) {
+                bestPartnership = {
+                    emoji: '🤝',
+                    title: 'Best Partnership',
+                    description: 'Most common goal + assist combination',
+                    players: [p1Player.name, p2Player.name],
+                    value: `${count} time${count > 1 ? 's' : ''}`,
+                }
+                break
+            }
         }
+    }
+
+    // Mr Consistent — lowest variance (min 3 games)
+    const consistentSorted = [...stats]
+        .filter(s => varianceByPlayer.has(s.player.id))
+        .sort((a, b) => (varianceByPlayer.get(a.player.id) ?? 0) - (varianceByPlayer.get(b.player.id) ?? 0))
+    const lowestVariance = consistentSorted[0] ? varianceByPlayer.get(consistentSorted[0].player.id) : undefined
+    const consistentWinners = consistentSorted.filter(
+        s => varianceByPlayer.get(s.player.id) === lowestVariance
+    )
+    const mrConsistent: Award = {
+        emoji: '📊',
+        title: 'Mr Consistent',
+        description: `Most consistent performer (min ${MIN_GAMES} games)`,
+        winners: consistentWinners.map(s => s.player.name),
+        value: lowestVariance !== undefined ? `${lowestVariance} variance` : '',
+        noWinner: consistentWinners.length === 0,
+    }
+
+    // Unlucky Hero — highest goals per game but worst win rate (min 3 games)
+    const unluckyHeroSorted = [...qualified]
+        .filter(s => s.games_played > 0)
+        .sort((a, b) => {
+            const aWinRate = a.wins / a.games_played
+            const bWinRate = b.wins / b.games_played
+            const aGPG = a.goals_per_game
+            const bGPG = b.goals_per_game
+            // Score = high goals per game, low win rate
+            return (bGPG - aWinRate) - (aGPG - bWinRate)
+        })
+    const unluckyHeroWinner = unluckyHeroSorted[0]
+    const unluckyHero: Award = {
+        emoji: '💪',
+        title: 'Unlucky Hero',
+        description: `Best scorer on the worst winning team (min ${MIN_GAMES} games)`,
+        winners: unluckyHeroWinner ? [unluckyHeroWinner.player.name] : [],
+        value: unluckyHeroWinner
+            ? `${unluckyHeroWinner.goals_per_game} GPG, ${Math.round((unluckyHeroWinner.wins / unluckyHeroWinner.games_played) * 100)}% win rate`
+            : '',
+        noWinner: !unluckyHeroWinner,
+    }
+
+    // Ghost — most games with zero goals or assists (min 3 games)
+    const ghostByPlayer = new Map<string, number>()
+    qualified.forEach(s => {
+        let blankGames = 0
+        games.forEach(game => {
+            const played = gamePlayers.some(gp => gp.player_id === s.player.id && gp.game_id === game.id)
+            if (!played) return
+            const involvement = events.filter(e =>
+                e.player_id === s.player.id &&
+                e.game_id === game.id &&
+                (e.event_type === 'goal' || e.event_type === 'assist')
+            ).length
+            if (involvement === 0) blankGames++
+        })
+        ghostByPlayer.set(s.player.id, blankGames)
+    })
+
+    const mostBlankGames = Math.max(0, ...Array.from(ghostByPlayer.values()))
+    const ghostWinners = qualified
+        .filter(s => (ghostByPlayer.get(s.player.id) ?? 0) === mostBlankGames && mostBlankGames > 0)
+        .map(s => s.player.name)
+    const ghost: Award = {
+        emoji: '👻',
+        title: 'Ghost',
+        description: `Most games with zero goals or assists (min ${MIN_GAMES} games)`,
+        winners: ghostWinners,
+        value: `${mostBlankGames} blank game${mostBlankGames !== 1 ? 's' : ''}`,
+        noWinner: ghostWinners.length === 0,
     }
 
     return {
@@ -333,7 +424,7 @@ export function calculateAwards(
             chanceCreator, clinical, wasteful, triggerHappy,
             reliable, alwaysThere, oneGameWonder, onFire,
             winner, unbeaten, unlucky,
-            nearlyMan, boomOrBust,
+            nearlyMan, boomOrBust, mrConsistent, unluckyHero, ghost,
         ],
         partnership: bestPartnership,
     }

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { usePlayers } from '../hooks/usePlayers'
 import { useEvents } from '../hooks/useEvents'
 import { useGames } from '../hooks/useGames'
@@ -22,7 +23,7 @@ function AwardCard({ award }: { award: Award }) {
                 ) : (
                     <>
                         <p className="text-white font-semibold">
-                            {award.winners.join(' & ')}
+                            {award.winners.join(', ')}
                         </p>
                         <p className="text-gray-500 text-sm mt-0.5">{award.value}</p>
                     </>
@@ -48,6 +49,29 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
     )
 }
 
+const SECTIONS = [
+    {
+        title: 'Scoring',
+        titles: ['Top Scorer', 'Playmaker', 'Most Involved', 'Hat Trick Hero', 'Chance Creator'],
+    },
+    {
+        title: 'Shooting',
+        titles: ['Clinical', 'Wasteful', 'Trigger Happy', 'Nearly Man'],
+    },
+    {
+        title: 'Consistency',
+        titles: ['Reliable', 'Always There', 'One Game Wonder', 'On Fire', 'Mr Consistent', 'Boom or Bust'],
+    },
+    {
+        title: 'Results',
+        titles: ['Winner', 'Unbeaten', 'Unlucky', 'Unlucky Hero'],
+    },
+    {
+        title: 'Misc',
+        titles: ['Ghost'],
+    },
+]
+
 export default function Awards() {
     const { players, loading: playersLoading } = usePlayers()
     const { events, loading: eventsLoading } = useEvents()
@@ -56,15 +80,19 @@ export default function Awards() {
     const { stats } = useStats(players, events, games, gamePlayers)
 
     const { awards, partnership } = useMemo(
-        () => calculateAwards(stats, events, games, gamePlayers),
-        [stats, events, games, gamePlayers]
+        () => calculateAwards(stats, events, games, gamePlayers, players),
+        [stats, events, games, gamePlayers, players]
     )
 
     const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading
 
+    const awardsByTitle = useMemo(() =>
+        Object.fromEntries(awards.map(a => [a.title, a])),
+        [awards]
+    )
+
     return (
         <div className="min-h-screen bg-gray-950 text-white">
-
             <div className="max-w-5xl mx-auto px-6 py-10">
                 <div className="flex items-center justify-between mb-10">
                     <h1 className="text-2xl font-bold text-white">Awards</h1>
@@ -72,6 +100,7 @@ export default function Awards() {
                         {awards.filter(a => !a.noWinner).length} active
                     </span>
                 </div>
+
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {[...Array(8)].map((_, i) => (
@@ -80,58 +109,23 @@ export default function Awards() {
                     </div>
                 ) : (
                     <div className="space-y-10">
-
-                        {/* Attacking */}
-                        <section className="space-y-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                                Attacking
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {awards.slice(0, 8).map(award => (
-                                    <AwardCard key={award.title} award={award} />
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Consistency */}
-                        <section className="space-y-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                                Consistency
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {awards.slice(8, 11).map(award => (
-                                    <AwardCard key={award.title} award={award} />
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Team */}
-                        <section className="space-y-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                                Team & Results
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {awards.slice(11, 14).map(award => (
-                                    <AwardCard key={award.title} award={award} />
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* Fun */}
-                        <section className="space-y-4">
-                            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                                Fun
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {awards.slice(14).map(award => (
-                                    <AwardCard key={award.title} award={award} />
-                                ))}
-                                {partnership && (
-                                    <PartnershipCard award={partnership} />
-                                )}
-                            </div>
-                        </section>
-
+                        {SECTIONS.map(section => (
+                            <section key={section.title} className="space-y-4">
+                                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                                    {section.title}
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {section.titles.map(title => {
+                                        const award = awardsByTitle[title]
+                                        if (!award) return null
+                                        return <AwardCard key={title} award={award} />
+                                    })}
+                                    {section.title === 'Fun' && partnership && (
+                                        <PartnershipCard award={partnership} />
+                                    )}
+                                </div>
+                            </section>
+                        ))}
                     </div>
                 )}
             </div>
