@@ -4,6 +4,7 @@ import GameSetup from '../components/tagger/GameSetup'
 import EventLogger from '../components/tagger/EventLogger'
 import { setGameResult } from '../services/games'
 import type { Game, Player } from '../types'
+import { useGames } from '../hooks/useGames'
 
 type Phase = 'auth' | 'setup' | 'tagging' | 'result'
 
@@ -15,6 +16,7 @@ export default function Tagger() {
   const [activePlayers, setActivePlayers] = useState<Player[]>([])
   const [teamAssignments, setTeamAssignments] = useState<Map<string, 1 | 2>>(new Map())
   const [submitting, setSubmitting] = useState(false)
+  const { refresh: refreshGames } = useGames()
 
   function handleLogin() {
     if (password === TAGGER_PASSWORD) {
@@ -36,6 +38,7 @@ export default function Tagger() {
     if (!game) return
     setSubmitting(true)
     await setGameResult(game.id, result)
+    refreshGames()
     setPhase('setup')
     setGame(null)
     setActivePlayers([])

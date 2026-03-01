@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
-import { getEvents, addEvent, deleteEvent } from '../services/events'
+import { useEffect, useRef, useState } from 'react'
+import { getEvents, addEvent, removeEvent, removeRelatedEvents } from '../services/events'
 import type { Event, EventType } from '../types'
 
 export function useEvents() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queueRef = useRef<Promise<void>>(Promise.resolve())
 
   useEffect(() => {
     fetch()
@@ -17,22 +17,41 @@ export function useEvents() {
       const data = await getEvents()
       setEvents(data)
     } catch (e) {
-      setError('Failed to load events')
+      console.error('Failed to load events', e)
     } finally {
       setLoading(false)
     }
   }
 
-  async function createEvent(gameId: string, playerId: string, eventType: EventType) {
-    const event = await addEvent(gameId, playerId, eventType)
-    setEvents(prev => [...prev, event])
-    return event
+  async function createEvent(
+    gameId: string,
+    playerId: string,
+    eventType: EventType,
+    relatedEventId?: string
+  ): Promise<Event | undefined> {
+    return new Promise((resolve, reject) => {
+      queueRef.current = queueRef.current.then(async () => {
+        try {
+          const event = await addEvent(gameId, playerId, eventType, relatedEventId)
+          setEvents(prev => [...prev, event])
+          resolve(event)
+        } catch (e) {
+          console.error('Failed to create event', e)
+          reject(e)
+        }
+      })
+    })
   }
 
-  async function removeEvent(eventId: string) {
-    await deleteEvent(eventId)
-    setEvents(prev => prev.filter(e => e.id !== eventId))
+  async function deleteEvent(id: string) {
+    try {
+      await removeEvent(id)
+      await removeRelatedEvents(id)
+      setEvents(prev => prev.filter(e => e.id !== id && e.related_event_id !== id))
+    } catch (e) {
+      console.error('Failed to delete event', e)
+    }
   }
 
-  return { events, loading, error, createEvent, removeEvent, refresh: fetch }
+  return { events, loading, createEvent, removeEvent: deleteEvent, refresh: fetch }
 }

@@ -17,6 +17,7 @@ interface PendingFlow {
   type: FlowType
   step: FlowStep
   firstPlayerId: string | null
+  goalEventId?: string
 }
 
 export default function EventLogger({ game, activePlayers, teamAssignments, onFinish }: Props) {
@@ -57,19 +58,20 @@ export default function EventLogger({ game, activePlayers, teamAssignments, onFi
   async function handlePlayerSelect(player: Player) {
     if (!flow) return
 
-    // Goal flow — step 1: scorer selected
+    // Goal flow — step 1: scorer selected — create events immediately, store goal ID
     if (flow.type === 'goal' && flow.step === 'scorer') {
-      setFlow({ ...flow, step: 'assister', firstPlayerId: player.id })
+      const goalEvent = await createEvent(game.id, player.id, 'goal')
+      if (!goalEvent) return
+      await createEvent(game.id, player.id, 'shot_on_target', goalEvent.id)
+      setFlow({ ...flow, step: 'assister', firstPlayerId: player.id, goalEventId: goalEvent.id })
       return
     }
 
     // Goal flow — step 2: assister selected
     if (flow.type === 'goal' && flow.step === 'assister') {
       const scorer = activePlayers.find(p => p.id === flow.firstPlayerId)
-      await createEvent(game.id, flow.firstPlayerId!, 'goal')
-      await createEvent(game.id, flow.firstPlayerId!, 'shot_on_target')
-      await createEvent(game.id, player.id, 'assist')
-      await createEvent(game.id, player.id, 'key_pass')
+      await createEvent(game.id, player.id, 'assist', flow.goalEventId)
+      await createEvent(game.id, player.id, 'key_pass', flow.goalEventId)
       flashAction(`⚽ ${scorer?.name} (assist: ${player.name})`)
       setFlow(null)
       return
@@ -77,15 +79,16 @@ export default function EventLogger({ game, activePlayers, teamAssignments, onFi
 
     // Shot flow — step 1: shooter selected
     if (flow.step === 'shooter') {
-      setFlow({ ...flow, step: 'keypasser', firstPlayerId: player.id })
+      const shotEvent = await createEvent(game.id, player.id, flow.type)
+      if (!shotEvent) return
+      setFlow({ ...flow, step: 'keypasser', firstPlayerId: player.id, goalEventId: shotEvent.id })
       return
     }
 
     // Shot flow — step 2: key passer selected
     if (flow.step === 'keypasser') {
       const shooter = activePlayers.find(p => p.id === flow.firstPlayerId)
-      await createEvent(game.id, flow.firstPlayerId!, flow.type)
-      await createEvent(game.id, player.id, 'key_pass')
+      await createEvent(game.id, player.id, 'key_pass', flow.goalEventId)
       flashAction(`${flow.type === 'shot_on_target' ? '🟢' : '🔴'} ${shooter?.name} (KP: ${player.name})`)
       setFlow(null)
       return
@@ -95,26 +98,20 @@ export default function EventLogger({ game, activePlayers, teamAssignments, onFi
   async function handleSkip() {
     if (!flow) return
 
-    // Skip assister
     if (flow.type === 'goal' && flow.step === 'assister') {
       const scorer = activePlayers.find(p => p.id === flow.firstPlayerId)
-      await createEvent(game.id, flow.firstPlayerId!, 'goal')
-      await createEvent(game.id, flow.firstPlayerId!, 'shot_on_target')
       flashAction(`⚽ ${scorer?.name} (no assist)`)
       setFlow(null)
       return
     }
 
-    // Skip key passer
     if (flow.step === 'keypasser') {
       const shooter = activePlayers.find(p => p.id === flow.firstPlayerId)
-      await createEvent(game.id, flow.firstPlayerId!, flow.type)
       flashAction(`${flow.type === 'shot_on_target' ? '🟢' : '🔴'} ${shooter?.name} (no KP)`)
       setFlow(null)
       return
     }
   }
-
   const promptText = (() => {
     if (!flow) return null
     if (flow.type === 'goal' && flow.step === 'scorer') return '⚽ Goal — who scored?'

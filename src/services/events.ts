@@ -5,16 +5,7 @@ export async function getEvents(): Promise<Event[]> {
   const { data, error } = await supabase
     .from('events')
     .select('*')
-
-  if (error) throw error
-  return data
-}
-
-export async function getEventsByPlayer(playerId: string): Promise<Event[]> {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('player_id', playerId)
+    .order('created_at', { ascending: true })
 
   if (error) throw error
   return data
@@ -23,11 +14,17 @@ export async function getEventsByPlayer(playerId: string): Promise<Event[]> {
 export async function addEvent(
   gameId: string,
   playerId: string,
-  eventType: EventType
+  eventType: EventType,
+  relatedEventId?: string
 ): Promise<Event> {
   const { data, error } = await supabase
     .from('events')
-    .insert({ game_id: gameId, player_id: playerId, event_type: eventType })
+    .insert({
+      game_id: gameId,
+      player_id: playerId,
+      event_type: eventType,
+      ...(relatedEventId ? { related_event_id: relatedEventId } : {})
+    })
     .select()
     .single()
 
@@ -35,11 +32,20 @@ export async function addEvent(
   return data
 }
 
-export async function deleteEvent(eventId: string): Promise<void> {
+export async function removeEvent(id: string): Promise<void> {
   const { error } = await supabase
     .from('events')
     .delete()
-    .eq('id', eventId)
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function removeRelatedEvents(relatedEventId: string): Promise<void> {
+  const { error } = await supabase
+    .from('events')
+    .delete()
+    .eq('related_event_id', relatedEventId)
 
   if (error) throw error
 }

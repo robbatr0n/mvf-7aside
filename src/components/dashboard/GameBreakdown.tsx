@@ -37,21 +37,18 @@ export default function GameBreakdown({ summaries }: Props) {
     if (summaries.length === 0) return null
 
     const current = summaries[index]
-    const { game, team1Goals, team2Goals } = current
-
-    const winningTeam = game.winning_team
-    const team1Won = winningTeam === 1
-    const team2Won = winningTeam === 2
+    const team1Score = current.team1Goals.length
+    const team2Score = current.team2Goals.length
 
     return (
         <div className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                Game History
+                Game Breakdown
             </h2>
 
             <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
 
-                {/* Date + navigation */}
+                {/* Navigation header */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
                     <button
                         onClick={() => setIndex(i => i + 1)}
@@ -94,56 +91,34 @@ export default function GameBreakdown({ summaries }: Props) {
                     </button>
                 </div>
 
-                {/* Match result */}
-                <div className="px-6 py-6">
-
-                    {/* Score row */}
-                    <div className="grid grid-cols-3 items-center gap-4 mb-6">
-
-                        {/* Team 1 */}
-                        <div className="text-left">
-                            <p className={`font-bold text-base ${team1Won ? 'text-white' : 'text-gray-400'}`}>
-                                Non Bibs
-                            </p>
-                        </div>
-
-                        {/* Score */}
-                        <div className="flex items-center justify-center gap-3">
-                            <span className={`text-4xl font-black tabular-nums ${team1Won ? 'text-white' : 'text-gray-500'
-                                }`}>
-                                {team1Goals.length}
-                            </span>
-                            <span className="text-gray-700 text-2xl font-light">:</span>
-                            <span className={`text-4xl font-black tabular-nums ${team2Won ? 'text-white' : 'text-gray-500'
-                                }`}>
-                                {team2Goals.length}
-                            </span>
-                        </div>
-
-                        {/* Team 2 */}
-                        <div className="text-right">
-                            <p className={`font-bold text-base ${team2Won ? 'text-white' : 'text-gray-400'}`}>
-                                Bibs
-                            </p>
-                        </div>
+                {/* Score */}
+                <div className="grid grid-cols-3 items-center px-6 py-5 border-b border-gray-800">
+                    <p className="text-white font-semibold text-sm">Non Bibs</p>
+                    <div className="flex items-center justify-center gap-3">
+                        <span className={`text-3xl font-black tabular-nums ${team1Score > team2Score ? 'text-white' : 'text-gray-600'
+                            }`}>
+                            {team1Score}
+                        </span>
+                        <span className="text-gray-700 text-xl">:</span>
+                        <span className={`text-3xl font-black tabular-nums ${team2Score > team1Score ? 'text-white' : 'text-gray-600'
+                            }`}>
+                            {team2Score}
+                        </span>
                     </div>
-
-                    {/* Goal scorers */}
-                    {(team1Goals.length > 0 || team2Goals.length > 0) && (
-                        <div className="grid grid-cols-2 gap-6 pt-4 border-t border-gray-800">
-                            <GoalList goals={team1Goals} align="left" />
-                            <GoalList goals={team2Goals} align="right" />
-                        </div>
-                    )}
-
-                    {team1Goals.length === 0 && team2Goals.length === 0 && (
-                        <p className="text-center text-gray-600 text-sm">No goals tagged</p>
-                    )}
+                    <p className="text-orange-400 font-semibold text-sm text-right">🟠 Bibs</p>
                 </div>
 
-                {/* Dot navigation */}
-                {summaries.length > 1 && (
-                    <div className="flex items-center justify-center gap-1.5 pb-4">
+                {/* Goal lists */}
+                <div className="grid grid-cols-2 gap-4 px-6 py-5">
+                    <GoalList goals={current.team1Goals} align="left" />
+                    <GoalList goals={current.team2Goals} align="right" />
+                </div>
+
+                {/* Edit link + dot pagination */}
+                <div className="grid grid-cols-3 items-center px-5 pb-4">
+                    <div />
+
+                    <div className="flex items-center justify-center gap-1.5">
                         {[...summaries].reverse().map((_, i) => {
                             const reversedIndex = summaries.length - 1 - i
                             return (
@@ -151,14 +126,17 @@ export default function GameBreakdown({ summaries }: Props) {
                                     key={i}
                                     onClick={() => setIndex(reversedIndex)}
                                     className={`rounded-full transition-all ${reversedIndex === index
-                                        ? 'bg-blue-500 w-4 h-1.5'
-                                        : 'bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5'
+                                            ? 'bg-blue-500 w-4 h-1.5'
+                                            : 'bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5'
                                         }`}
                                 />
                             )
                         })}
                     </div>
-                )}
+
+                    <div />
+                </div>
+
             </div>
         </div>
     )

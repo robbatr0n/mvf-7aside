@@ -195,67 +195,59 @@ export function calculateGameSummaries(
   events: Event[],
   gamePlayers: GamePlayer[]
 ): GameSummary[] {
-  return games.map(game => {
-    const gameEvents = events
-      .filter(e => e.game_id === game.id)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  return [...games]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .map(game => {
+      const gameEvents = events.filter(e => e.game_id === game.id)
 
-    const gpEntries = gamePlayers.filter(gp => gp.game_id === game.id)
-    const team1Players = gpEntries
-      .filter(gp => gp.team === 1)
-      .map(gp => players.find(p => p.id === gp.player_id))
-      .filter(Boolean) as Player[]
-    const team2Players = gpEntries
-      .filter(gp => gp.team === 2)
-      .map(gp => players.find(p => p.id === gp.player_id))
-      .filter(Boolean) as Player[]
+      const gpEntries = gamePlayers.filter(gp => gp.game_id === game.id)
+      const team1Players = gpEntries
+        .filter(gp => gp.team === 1)
+        .map(gp => players.find(p => p.id === gp.player_id))
+        .filter(Boolean) as Player[]
+      const team2Players = gpEntries
+        .filter(gp => gp.team === 2)
+        .map(gp => players.find(p => p.id === gp.player_id))
+        .filter(Boolean) as Player[]
 
-    const goalEvents = gameEvents.filter(e => e.event_type === 'goal')
-    const assistEvents = gameEvents.filter(e => e.event_type === 'assist')
+      const goalEvents = gameEvents.filter(e => e.event_type === 'goal')
 
-    const usedAssistIds = new Set<string>()
-    const goalEntries: GoalEntry[] = goalEvents.map(goal => {
-      const scorer = players.find(p => p.id === goal.player_id) ?? null
-      if (!scorer) return null
+      const goalEntries: GoalEntry[] = goalEvents.map(goal => {
+        const scorer = players.find(p => p.id === goal.player_id) ?? null
+        if (!scorer) return null
 
-      const goalTime = new Date(goal.created_at).getTime()
-      const matchedAssist = assistEvents
-        .filter(a => !usedAssistIds.has(a.id))
-        .filter(a => new Date(a.created_at).getTime() >= goalTime)
-        .sort((a, b) =>
-          Math.abs(new Date(a.created_at).getTime() - goalTime) -
-          Math.abs(new Date(b.created_at).getTime() - goalTime)
-        )[0]
+        // Direct lookup via related_event_id — no timestamp guessing
+        const assistEvent = gameEvents.find(
+          e => e.event_type === 'assist' && e.related_event_id === goal.id
+        )
+        const assister = assistEvent
+          ? players.find(p => p.id === assistEvent.player_id) ?? null
+          : null
 
-      if (matchedAssist) usedAssistIds.add(matchedAssist.id)
-      const assister = matchedAssist
-        ? players.find(p => p.id === matchedAssist.player_id) ?? null
-        : null
+        return {
+          scorer,
+          assister,
+          team_override: goal.team_override ?? null,
+        }
+      }).filter(Boolean) as GoalEntry[]
+
+      const team1Goals = goalEntries.filter(g => {
+        if (g.team_override !== null) return g.team_override === 1
+        return team1Players.some(p => p.id === g.scorer.id)
+      })
+
+      const team2Goals = goalEntries.filter(g => {
+        if (g.team_override !== null) return g.team_override === 2
+        return team2Players.some(p => p.id === g.scorer.id)
+      })
 
       return {
-        scorer,
-        assister,
-        team_override: goal.team_override ?? null,
+        game,
+        team1Players,
+        team2Players,
+        team1Goals,
+        team2Goals,
+        totalGoals: goalEntries.length,
       }
-    }).filter(Boolean) as GoalEntry[]
-
-    const team1Goals = goalEntries.filter(g => {
-      if (g.team_override !== null) return g.team_override === 1
-      return team1Players.some(p => p.id === g.scorer.id)
     })
-
-    const team2Goals = goalEntries.filter(g => {
-      if (g.team_override !== null) return g.team_override === 2
-      return team2Players.some(p => p.id === g.scorer.id)
-    })
-
-    return {
-      game,
-      team1Players,
-      team2Players,
-      team1Goals,
-      team2Goals,
-      totalGoals: goalEntries.length,
-    }
-  })
 }

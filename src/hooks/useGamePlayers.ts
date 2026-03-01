@@ -16,11 +16,11 @@ export function useGamePlayers() {
             const data = await getGamePlayers()
             setGamePlayers(data)
         } catch (e) {
-            console.error('Failed to load game players')
+            console.error('Failed to load game players', e)
         } finally {
             setLoading(false)
         }
     }
 
-    return { gamePlayers, loading }
+    return { gamePlayers, loading, refresh: fetch }
 }

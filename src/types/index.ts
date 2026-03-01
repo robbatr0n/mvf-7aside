@@ -32,6 +32,7 @@ export interface Event {
   game_id: string
   player_id: string
   event_type: EventType
+  related_event_id: string | null
   team_override: number | null
   created_at: string
 }
