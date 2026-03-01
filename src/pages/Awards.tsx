@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { usePlayers } from '../hooks/usePlayers'
 import { useEvents } from '../hooks/useEvents'
 import { useGames } from '../hooks/useGames'

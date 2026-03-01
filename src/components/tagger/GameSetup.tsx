@@ -42,7 +42,7 @@ export default function GameSetup({ onReady }: Props) {
 
   async function handleAddPlayer(isGuest = false) {
     if (!newPlayerName.trim()) return
-    const player = await createPlayer(newPlayerName.trim())
+    const player = await createPlayer(newPlayerName.trim(), isGuest)
     setSelectedIds(prev => new Set(prev).add(player.id))
     setNewPlayerName('')
   }
