@@ -1,73 +1,79 @@
-import { useState } from 'react'
-import type { Player } from '../../types'
-import { updatePlayer, deletePlayer, promoteGuest } from '../../services/players'
+import { useState } from "react";
+import type { Player } from "../../types";
+import {
+  updatePlayer,
+  deletePlayer,
+  promoteGuest,
+} from "../../services/players";
 
 interface Props {
-  players: Player[]
-  onClose: () => void
-  onAdd: (name: string, isGuest?: boolean) => Promise<Player>
-  onUpdate: (id: string, name: string) => void
-  onDelete: (id: string) => void
+  players: Player[];
+  onClose: () => void;
+  onAdd: (name: string, isGuest?: boolean) => Promise<Player>;
+  onUpdate: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdate, onDelete }: Props) {
-  const [newName, setNewName] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [promoting, setPromoting] = useState<string | null>(null)
-  const [promoteName, setPromoteName] = useState('')
+export default function PlayerManagementPanel({
+  players,
+  onClose,
+  onAdd,
+  onUpdate,
+  onDelete,
+}: Props) {
+  const [newName, setNewName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [promoting, setPromoting] = useState<string | null>(null);
+  const [promoteName, setPromoteName] = useState("");
 
   async function handleAdd(isGuest = false) {
-    if (!newName.trim()) return
-    await onAdd(newName.trim(), isGuest)
-    setNewName('')
+    if (!newName.trim()) return;
+    await onAdd(newName.trim(), isGuest);
+    setNewName("");
   }
 
   function startEdit(player: Player) {
-    setEditingId(player.id)
-    setEditingName(player.name)
+    setEditingId(player.id);
+    setEditingName(player.name);
   }
 
   async function handleUpdate(id: string) {
-    if (!editingName.trim()) return
-    await updatePlayer(id, editingName.trim())
-    onUpdate(id, editingName.trim())
-    setEditingId(null)
+    if (!editingName.trim()) return;
+    await updatePlayer(id, editingName.trim());
+    onUpdate(id, editingName.trim());
+    setEditingId(null);
   }
 
   async function handleDelete(id: string) {
-    await deletePlayer(id)
-    onDelete(id)
-    setConfirmDeleteId(null)
+    await deletePlayer(id);
+    onDelete(id);
+    setConfirmDeleteId(null);
   }
 
   function startPromote(player: Player) {
-    setPromoting(player.id)
-    setPromoteName(player.name)
+    setPromoting(player.id);
+    setPromoteName(player.name);
   }
 
   async function handlePromote(id: string) {
-    if (!promoteName.trim()) return
-    await promoteGuest(id, promoteName.trim())
-    onUpdate(id, promoteName.trim())
-    setPromoting(null)
+    if (!promoteName.trim()) return;
+    await promoteGuest(id, promoteName.trim());
+    onUpdate(id, promoteName.trim());
+    setPromoting(null);
   }
 
-  const regularPlayers = players.filter(p => !p.is_guest)
-  const guestPlayers = players.filter(p => p.is_guest)
+  const regularPlayers = players.filter((p) => !p.is_guest);
+  const guestPlayers = players.filter((p) => p.is_guest);
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-gray-900 border-l border-gray-800 z-50 flex flex-col">
-
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
           <span className="text-white font-semibold">Manage Roster</span>
@@ -81,7 +87,6 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-
           {/* Add player */}
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
@@ -92,8 +97,8 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                 type="text"
                 placeholder="Name..."
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAdd(false)}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd(false)}
                 className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-500 transition-colors"
               />
               <button
@@ -121,7 +126,7 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                 Players ({regularPlayers.length})
               </label>
               <div className="space-y-1">
-                {regularPlayers.map(player => (
+                {regularPlayers.map((player) => (
                   <div
                     key={player.id}
                     className="group flex items-center justify-between bg-gray-800/50 hover:bg-gray-800 rounded-xl px-4 py-3 transition-colors"
@@ -131,10 +136,10 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                         <input
                           type="text"
                           value={editingName}
-                          onChange={e => setEditingName(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleUpdate(player.id)
-                            if (e.key === 'Escape') setEditingId(null)
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleUpdate(player.id);
+                            if (e.key === "Escape") setEditingId(null);
                           }}
                           autoFocus
                           className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
@@ -154,7 +159,9 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                       </div>
                     ) : confirmDeleteId === player.id ? (
                       <div className="flex items-center justify-between flex-1">
-                        <span className="text-gray-400 text-sm">Delete {player.name}?</span>
+                        <span className="text-gray-400 text-sm">
+                          Delete {player.name}?
+                        </span>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleDelete(player.id)}
@@ -172,7 +179,9 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                       </div>
                     ) : (
                       <>
-                        <span className="text-white text-sm font-medium">{player.name}</span>
+                        <span className="text-white text-sm font-medium">
+                          {player.name}
+                        </span>
                         <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => startEdit(player)}
@@ -205,7 +214,7 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                 Hidden from stats. Promote to add them to the leaderboard.
               </p>
               <div className="space-y-1">
-                {guestPlayers.map(player => (
+                {guestPlayers.map((player) => (
                   <div
                     key={player.id}
                     className="group bg-gray-800/30 hover:bg-gray-800/60 border border-gray-800 rounded-xl px-4 py-3 transition-colors"
@@ -217,10 +226,10 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                           <input
                             type="text"
                             value={promoteName}
-                            onChange={e => setPromoteName(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handlePromote(player.id)
-                              if (e.key === 'Escape') setPromoting(null)
+                            onChange={(e) => setPromoteName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handlePromote(player.id);
+                              if (e.key === "Escape") setPromoting(null);
                             }}
                             autoFocus
                             className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
@@ -241,7 +250,9 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                       </div>
                     ) : confirmDeleteId === player.id ? (
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Delete {player.name}?</span>
+                        <span className="text-gray-400 text-sm">
+                          Delete {player.name}?
+                        </span>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleDelete(player.id)}
@@ -260,7 +271,9 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-400 text-sm">{player.name}</span>
+                          <span className="text-gray-400 text-sm">
+                            {player.name}
+                          </span>
                           <span className="text-xs text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded">
                             guest
                           </span>
@@ -289,5 +302,5 @@ export default function PlayerManagementPanel({ players, onClose, onAdd, onUpdat
         </div>
       </div>
     </>
-  )
+  );
 }

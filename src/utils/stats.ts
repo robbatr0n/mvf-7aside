@@ -139,6 +139,13 @@ export interface GoalEntry {
   team_override: number | null
 }
 
+export interface TeamStats {
+  shots: number
+  shotsOnTarget: number
+  shotAccuracy: number
+  shotConversion: number
+  keyPasses: number
+}
 
 export interface GameSummary {
   game: Game
@@ -147,7 +154,10 @@ export interface GameSummary {
   team1Goals: GoalEntry[]
   team2Goals: GoalEntry[]
   totalGoals: number
+  team1Stats: TeamStats
+  team2Stats: TeamStats
 }
+
 export interface PlayerGameStats {
   game: Game
   goals: number
@@ -189,6 +199,28 @@ export function calculatePlayerGameBreakdown(
     .sort((a, b) => new Date(b.game.date).getTime() - new Date(a.game.date).getTime())
 }
 
+
+function calcTeamStats(teamPlayers: Player[], gameEvents: Event[], teamGoals: number): TeamStats {
+  const playerIds = new Set(teamPlayers.map(p => p.id))
+  const allShots = gameEvents.filter(e =>
+    playerIds.has(e.player_id) &&
+    (e.event_type === 'shot_on_target' || e.event_type === 'shot_off_target')
+  )
+  const shotsOnTarget = allShots.filter(e => e.event_type === 'shot_on_target').length
+  const totalShots = allShots.length
+  const keyPasses = gameEvents.filter(e =>
+    playerIds.has(e.player_id) && e.event_type === 'key_pass'
+  ).length
+
+  return {
+    shots: totalShots,
+    shotsOnTarget,
+    shotAccuracy: totalShots > 0 ? Math.round((shotsOnTarget / totalShots) * 100) : 0,
+    shotConversion: totalShots > 0 ? Math.round((teamGoals / totalShots) * 100) : 0,
+    keyPasses,
+  }
+}
+
 export function calculateGameSummaries(
   games: Game[],
   players: Player[],
@@ -216,13 +248,29 @@ export function calculateGameSummaries(
         const scorer = players.find(p => p.id === goal.player_id) ?? null
         if (!scorer) return null
 
-        // Direct lookup via related_event_id — no timestamp guessing
-        const assistEvent = gameEvents.find(
+        const linkedAssist = gameEvents.find(
           e => e.event_type === 'assist' && e.related_event_id === goal.id
         )
-        const assister = assistEvent
-          ? players.find(p => p.id === assistEvent.player_id) ?? null
-          : null
+
+        let assister: Player | null = null
+        if (linkedAssist) {
+          assister = players.find(p => p.id === linkedAssist.player_id) ?? null
+        } else {
+          const goalTime = new Date(goal.created_at).getTime()
+          const unlinkedAssists = gameEvents.filter(
+            e => e.event_type === 'assist' && e.related_event_id === null
+          )
+          const closest = unlinkedAssists
+            .filter(a => a.player_id !== goal.player_id)
+            .filter(a => new Date(a.created_at).getTime() >= goalTime)
+            .sort((a, b) =>
+              Math.abs(new Date(a.created_at).getTime() - goalTime) -
+              Math.abs(new Date(b.created_at).getTime() - goalTime)
+            )[0]
+          if (closest) {
+            assister = players.find(p => p.id === closest.player_id) ?? null
+          }
+        }
 
         return {
           scorer,
@@ -248,6 +296,8 @@ export function calculateGameSummaries(
         team1Goals,
         team2Goals,
         totalGoals: goalEntries.length,
+        team1Stats: calcTeamStats(team1Players, gameEvents, team1Goals.length),
+        team2Stats: calcTeamStats(team2Players, gameEvents, team2Goals.length),
       }
     })
 }
