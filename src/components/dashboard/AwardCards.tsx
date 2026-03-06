@@ -30,10 +30,19 @@ function AwardCard({ emoji, title, name, value }: AwardCardProps) {
 }
 
 export default function AwardCards({ stats, partnership }: Props) {
-  const topScorer = [...stats].sort((a, b) => b.goals - a.goals)[0];
-  const mostAssists = [...stats].sort((a, b) => b.assists - a.assists)[0];
+  const sortedByGoals = [...stats].sort((a, b) => b.goals - a.goals);
+  const topGoals = sortedByGoals[0]?.goals ?? 0;
+  const topScorers = sortedByGoals.filter(
+    (s) => s.goals === topGoals && topGoals > 0,
+  );
 
-  if (!topScorer) return null;
+  const sortedByAssists = [...stats].sort((a, b) => b.assists - a.assists);
+  const topAssists = sortedByAssists[0]?.assists ?? 0;
+  const topAssisters = sortedByAssists.filter(
+    (s) => s.assists === topAssists && topAssists > 0,
+  );
+
+  if (!topScorers.length) return null;
 
   return (
     <div className="space-y-3">
@@ -41,14 +50,22 @@ export default function AwardCards({ stats, partnership }: Props) {
         <AwardCard
           emoji="⚽"
           title="Top Scorer"
-          name={topScorer.player.name}
-          value={`${topScorer.goals} goals`}
+          name={topScorers.map((s) => s.player.name).join(", ")}
+          value={`${topGoals} goal${topGoals !== 1 ? "s" : ""}`}
         />
         <AwardCard
           emoji="🎯"
           title="Most Assists"
-          name={mostAssists?.player.name ?? "—"}
-          value={`${mostAssists?.assists ?? 0} assists`}
+          name={
+            topAssisters.length
+              ? topAssisters.map((s) => s.player.name).join(", ")
+              : "—"
+          }
+          value={
+            topAssisters.length
+              ? `${topAssists} assist${topAssists !== 1 ? "s" : ""}`
+              : "No assists yet"
+          }
         />
         {partnership ? (
           <AwardCard
