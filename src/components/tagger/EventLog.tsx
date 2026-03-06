@@ -12,6 +12,8 @@ const EVENT_LABELS: Record<EventType, string> = {
   shot_on_target: "🟢 Shot on target",
   shot_off_target: "🔴 Shot off target",
   key_pass: "🔑 Key pass",
+  tackle: "Tackle",
+  interception: "Interception",
 };
 
 export default function EventLog({ events, players, onUndo }: Props) {

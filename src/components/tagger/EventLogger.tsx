@@ -96,6 +96,12 @@ export default function EventLogger({
 
     // Shot flow — step 1: shooter selected
     if (flow.step === "shooter") {
+      if (flow.type === "tackle" || flow.type === "interception") {
+        await createEvent(game.id, player.id, flow.type);
+        flashAction(`${flow.type === "tackle" ? "💪" : "✋"} ${player.name}`);
+        setFlow(null);
+        return;
+      }
       const shotEvent = await createEvent(game.id, player.id, flow.type);
       if (!shotEvent) return;
       setFlow({

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { TAGGER_PASSWORD } from "../constants";
+import { useGames } from "../hooks/useGames";
+import { setGameResult } from "../services/games";
 import GameSetup from "../components/tagger/GameSetup";
 import EventLogger from "../components/tagger/EventLogger";
-import { setGameResult } from "../services/games";
 import type { Game, Player } from "../types";
-import { useGames } from "../hooks/useGames";
 
 type Phase = "auth" | "setup" | "tagging" | "result";
 
@@ -19,6 +19,7 @@ export default function Tagger() {
   );
   const [submitting, setSubmitting] = useState(false);
   const { refresh: refreshGames } = useGames();
+  const [isExistingGame, setIsExistingGame] = useState(false);
 
   function handleLogin() {
     if (password === TAGGER_PASSWORD) {
@@ -33,10 +34,12 @@ export default function Tagger() {
     game: Game,
     players: Player[],
     assignments: Map<string, 1 | 2>,
+    existing = false,
   ) {
     setGame(game);
     setActivePlayers(players);
     setTeamAssignments(assignments);
+    setIsExistingGame(existing);
     setPhase("tagging");
   }
 
@@ -82,46 +85,51 @@ export default function Tagger() {
   }
 
   if (phase === "result") {
-    const team1 = activePlayers.filter((p) => teamAssignments.get(p.id) === 1);
-    const team2 = activePlayers.filter((p) => teamAssignments.get(p.id) === 2);
-
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <div className="bg-gray-900 p-8 rounded-xl w-full max-w-sm space-y-6">
-          <div className="space-y-1">
-            <h1 className="text-white text-xl font-bold">Who won?</h1>
-            <p className="text-gray-500 text-sm">Select the winning team</p>
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6 space-y-6">
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl font-bold text-white">Game Result</h1>
+            <p className="text-gray-500 text-sm">
+              {game &&
+                new Date(game.date).toLocaleDateString("en-GB", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+            </p>
           </div>
 
           <div className="space-y-3">
             <button
               onClick={() => handleResult(1)}
               disabled={submitting}
-              className="w-full bg-gray-800 hover:bg-blue-600 text-white rounded-xl px-5 py-4 text-left transition-colors space-y-1"
+              className="w-full bg-gray-900 border border-gray-800 hover:border-blue-600 rounded-2xl px-6 py-5 text-left transition-all disabled:opacity-40"
             >
-              <p className="font-semibold">No Bib win</p>
-              <p className="text-gray-400 text-xs">
-                {team1.map((p) => p.name).join(", ")}
+              <p className="text-white font-bold text-lg">Non Bibs Win</p>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Team 1 won this game
               </p>
             </button>
-
             <button
               onClick={() => handleResult(2)}
               disabled={submitting}
-              className="w-full bg-gray-800 hover:bg-orange-700 text-white rounded-xl px-5 py-4 text-left transition-colors space-y-1"
+              className="w-full bg-gray-900 border border-gray-800 hover:border-orange-600 rounded-2xl px-6 py-5 text-left transition-all disabled:opacity-40"
             >
-              <p className="font-semibold">🟠 Orange Bib win</p>
-              <p className="text-gray-400 text-xs">
-                {team2.map((p) => p.name).join(", ")}
+              <p className="text-orange-400 font-bold text-lg">🟠 Bibs Win</p>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Team 2 won this game
               </p>
             </button>
-
             <button
               onClick={() => handleResult(0)}
               disabled={submitting}
-              className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl px-5 py-4 font-semibold transition-colors"
+              className="w-full bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-2xl px-6 py-5 text-left transition-all disabled:opacity-40"
             >
-              Draw
+              <p className="text-gray-300 font-bold text-lg">Draw</p>
+              <p className="text-gray-500 text-sm mt-0.5">
+                Teams drew this game
+              </p>
             </button>
           </div>
         </div>
@@ -134,7 +142,17 @@ export default function Tagger() {
       game={game!}
       activePlayers={activePlayers}
       teamAssignments={teamAssignments}
-      onFinish={() => setPhase("result")}
+      onFinish={() => {
+        if (isExistingGame) {
+          setPhase("setup");
+          setGame(null);
+          setActivePlayers([]);
+          setTeamAssignments(new Map());
+          setIsExistingGame(false);
+        } else {
+          setPhase("result");
+        }
+      }}
     />
   );
 }

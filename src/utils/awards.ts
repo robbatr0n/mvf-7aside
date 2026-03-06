@@ -595,6 +595,42 @@ export function calculateAwards(
     noWinner: intHeroWinners.length === 0,
   };
 
+  // Best tackles per game rate
+  const tacklesPerGameWinners = topN(qualified, "tackles_per_game");
+  const tacklesPerGame: Award = {
+    emoji: "💪",
+    title: "Terminator",
+    description: "Best tackles per game rate",
+    winners: tacklesPerGameWinners.map((s) => s.player.name),
+    value: `${tacklesPerGameWinners[0]?.tackles_per_game ?? 0} per game`,
+    noWinner:
+      !tacklesPerGameWinners[0] ||
+      tacklesPerGameWinners[0].tackles_per_game === 0,
+  };
+
+  // Best interceptions per game rate
+  const interceptionsPerGameWinners = topN(qualified, "interceptions_per_game");
+  const interceptionsPerGame: Award = {
+    emoji: "✋",
+    title: "The Interceptor",
+    description: "Best interceptions per game rate",
+    winners: interceptionsPerGameWinners.map((s) => s.player.name),
+    value: `${interceptionsPerGameWinners[0]?.interceptions_per_game ?? 0} per game`,
+    noWinner:
+      !interceptionsPerGameWinners[0] ||
+      interceptionsPerGameWinners[0].interceptions_per_game === 0,
+  };
+
+  const celebrated: Award = {
+    emoji: "🎉",
+    title: "Not Too Cool 4 Skool",
+    description:
+      "Players that actually celebrated a goal instead of nonchalantly putting their head down",
+    winners: ["Aqeel Zaman"],
+    value: "",
+    noWinner: false,
+  };
+
   return {
     awards: [
       topScorer,
@@ -622,6 +658,9 @@ export function calculateAwards(
       enforcer,
       tackleHero,
       interceptionHero,
+      celebrated,
+      tacklesPerGame,
+      interceptionsPerGame,
     ],
     partnership: bestPartnership,
   };

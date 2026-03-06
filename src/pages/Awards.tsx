@@ -74,6 +74,8 @@ const SECTIONS = [
       "Enforcer",
       "Tackle Hero",
       "Interception Hero",
+      "Terminator",
+      "The Interceptor",
     ],
   },
   {
@@ -93,7 +95,7 @@ const SECTIONS = [
   },
   {
     title: "Misc",
-    titles: ["Ghost"],
+    titles: ["Ghost", "Not Too Cool 4 Skool"],
   },
 ];
 

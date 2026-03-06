@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { usePlayers } from "../../hooks/usePlayers";
-import { addGame, addGamePlayers } from "../../services/games";
+import { addGame } from "../../services/games";
 import type { Game, Player } from "../../types";
 import PlayerManagementPanel from "./PlayerManagementPanel";
+import ExistingGamePicker from "./ExistingGamePicker";
 
 interface Props {
   onReady: (
     game: Game,
     players: Player[],
     teamAssignments: Map<string, 1 | 2>,
+    existing?: boolean,
   ) => void;
 }
 
-type SetupPhase = "players" | "teams";
+type SetupMode = "choose" | "new" | "existing";
 
 export default function GameSetup({ onReady }: Props) {
   const { players, loading, createPlayer, refresh } = usePlayers();
-  const [setupPhase, setSetupPhase] = useState<SetupPhase>("players");
+  const [mode, setMode] = useState<SetupMode>("choose");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [teamAssignments, setTeamAssignments] = useState<Map<string, 1 | 2>>(
     new Map(),
@@ -29,21 +31,21 @@ export default function GameSetup({ onReady }: Props) {
   function togglePlayer(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
 
-  function assignTeam(playerId: string, team: 1 | 2) {
-    setTeamAssignments((prev) => new Map(prev).set(playerId, team));
-  }
-
-  function handleProceedToTeams() {
-    // Default everyone to team 1
-    const assignments = new Map<string, 1 | 2>();
-    selectedIds.forEach((id) => assignments.set(id, 1));
-    setTeamAssignments(assignments);
-    setSetupPhase("teams");
+  function setTeam(id: string, team: 1 | 2) {
+    setTeamAssignments((prev) => {
+      const next = new Map(prev);
+      next.set(id, team);
+      return next;
+    });
   }
 
   async function handleAddPlayer(isGuest = false) {
@@ -51,10 +53,6 @@ export default function GameSetup({ onReady }: Props) {
     const player = await createPlayer(newPlayerName.trim(), isGuest);
     setSelectedIds((prev) => new Set(prev).add(player.id));
     setNewPlayerName("");
-  }
-
-  function handleUpdatePlayer(_id: string, _name: string) {
-    refresh();
   }
 
   function handleDeletePlayer(id: string) {
@@ -71,87 +69,56 @@ export default function GameSetup({ onReady }: Props) {
     setSubmitting(true);
     const game = await addGame(date);
     const selected = players.filter((p) => selectedIds.has(p.id));
-    const assignments = Array.from(teamAssignments.entries()).map(
-      ([playerId, team]) => ({ playerId, team }),
-    );
-    await addGamePlayers(game.id, assignments);
     onReady(game, selected, teamAssignments);
   }
 
   const selectedPlayers = players.filter((p) => selectedIds.has(p.id));
-  const team1 = selectedPlayers.filter((p) => teamAssignments.get(p.id) === 1);
-  const team2 = selectedPlayers.filter((p) => teamAssignments.get(p.id) === 2);
-  const canStart = team1.length > 0 && team2.length > 0;
+  const allAssigned =
+    selectedPlayers.length > 0 &&
+    selectedPlayers.every((p) => teamAssignments.has(p.id));
+  const canStart = selectedIds.size > 0 && allAssigned;
 
-  if (setupPhase === "teams") {
+  if (mode === "existing") {
+    return (
+      <ExistingGamePicker
+        onSelect={(game, players, teamAssignments, existing) =>
+          onReady(game, players, teamAssignments, existing)
+        }
+        onBack={() => setMode("choose")}
+      />
+    );
+  }
+
+  if (mode === "choose") {
     return (
       <div className="min-h-screen bg-gray-950 text-white">
-        <div className="border-b border-gray-800 px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSetupPhase("players")}
-              className="text-gray-500 hover:text-white transition-colors"
-            >
-              ←
-            </button>
-            <span className="font-bold text-lg tracking-tight">
-              Assign Teams
-            </span>
-          </div>
-          <span className="text-gray-500 text-sm">
-            {selectedPlayers.length} players
-          </span>
+        <div className="border-b border-gray-800 px-8 py-5 flex items-center gap-3">
+          <span className="text-2xl">⚽</span>
+          <span className="font-bold text-lg tracking-tight">Tagger</span>
         </div>
-
-        <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Team 1 */}
-            <div className="space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                No Bib
-              </div>
-              <div className="space-y-2 min-h-32">
-                {team1.map((player) => (
-                  <button
-                    key={player.id}
-                    onClick={() => assignTeam(player.id, 2)}
-                    className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-3 text-sm font-medium transition-colors text-left"
-                  >
-                    {player.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Team 2 */}
-            <div className="space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-orange-500">
-                🟠 Orange Bibs
-              </div>
-              <div className="space-y-2 min-h-32">
-                {team2.map((player) => (
-                  <button
-                    key={player.id}
-                    onClick={() => assignTeam(player.id, 1)}
-                    className="w-full bg-orange-900/40 hover:bg-orange-900/60 border border-orange-800/50 text-white rounded-xl px-4 py-3 text-sm font-medium transition-colors text-left"
-                  >
-                    {player.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <p className="text-gray-600 text-xs text-center">
-            Click a player to move them between teams
+        <div className="max-w-2xl mx-auto px-6 py-10 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-6">
+            What would you like to do?
           </p>
-
           <button
-            onClick={handleStart}
-            disabled={!canStart || submitting}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 font-bold text-base transition-all"
+            onClick={() => setMode("new")}
+            className="w-full bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-2xl px-6 py-5 text-left transition-all"
           >
-            {submitting ? "Starting..." : "Start Tagging →"}
+            <p className="text-white font-bold text-lg">⚽ New Game</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Set up a new game and start tagging from scratch
+            </p>
+          </button>
+          <button
+            onClick={() => setMode("existing")}
+            className="w-full bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-2xl px-6 py-5 text-left transition-all"
+          >
+            <p className="text-white font-bold text-lg">
+              📂 Continue Existing Game
+            </p>
+            <p className="text-gray-500 text-sm mt-1">
+              Add tackles, interceptions or missing events to a previous game
+            </p>
           </button>
         </div>
       </div>
@@ -165,15 +132,24 @@ export default function GameSetup({ onReady }: Props) {
           <span className="text-2xl">⚽</span>
           <span className="font-bold text-lg tracking-tight">New Game</span>
         </div>
-        <button
-          onClick={() => setShowRoster(true)}
-          className="text-gray-400 hover:text-white text-sm transition-colors"
-        >
-          Manage Roster
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setMode("choose")}
+            className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={() => setShowRoster(true)}
+            className="text-gray-400 hover:text-white text-sm transition-colors"
+          >
+            Manage Roster
+          </button>
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-10 space-y-10">
+        {/* Date */}
         <section className="space-y-3">
           <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
             Date
@@ -186,6 +162,7 @@ export default function GameSetup({ onReady }: Props) {
           />
         </section>
 
+        {/* Player selection */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
@@ -238,7 +215,7 @@ export default function GameSetup({ onReady }: Props) {
               className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-gray-600 transition-colors"
             />
             <button
-              onClick={() => handleAddPlayer(false)}
+              onClick={() => handleAddPlayer()}
               disabled={!newPlayerName.trim()}
               className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white rounded-xl px-5 py-3 text-sm font-medium transition-colors"
             >
@@ -247,20 +224,62 @@ export default function GameSetup({ onReady }: Props) {
             <button
               onClick={() => handleAddPlayer(true)}
               disabled={!newPlayerName.trim()}
-              className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-400 rounded-xl px-4 py-3 text-sm font-medium transition-colors"
-              title="Add as guest — hidden from stats until promoted"
+              className="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white rounded-xl px-5 py-3 text-sm font-medium transition-colors"
             >
               Guest
             </button>
           </div>
         </section>
 
+        {/* Team assignment */}
+        {selectedIds.size > 0 && (
+          <section className="space-y-4">
+            <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+              Assign Teams
+            </label>
+            <div className="space-y-2">
+              {selectedPlayers.map((player) => (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl px-4 py-3"
+                >
+                  <span className="text-white text-sm font-medium">
+                    {player.name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setTeam(player.id, 1)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        teamAssignments.get(player.id) === 1
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Non Bibs
+                    </button>
+                    <button
+                      onClick={() => setTeam(player.id, 2)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        teamAssignments.get(player.id) === 2
+                          ? "bg-orange-600 text-white"
+                          : "bg-gray-800 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      🟠 Bibs
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <button
-          onClick={handleProceedToTeams}
-          disabled={selectedIds.size === 0}
+          onClick={handleStart}
+          disabled={!canStart || submitting}
           className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 font-bold text-base transition-all shadow-lg shadow-blue-900/30"
         >
-          Assign Teams →
+          {submitting ? "Starting..." : "Start Tagging →"}
         </button>
       </div>
 
@@ -269,7 +288,7 @@ export default function GameSetup({ onReady }: Props) {
           players={players}
           onClose={() => setShowRoster(false)}
           onAdd={createPlayer}
-          onUpdate={handleUpdatePlayer}
+          onUpdate={() => refresh()}
           onDelete={handleDeletePlayer}
         />
       )}
