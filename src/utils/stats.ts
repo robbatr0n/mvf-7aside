@@ -182,6 +182,8 @@ export interface TeamStats {
   shotAccuracy: number;
   shotConversion: number;
   keyPasses: number;
+  tackles: number;
+  interceptions: number;
 }
 
 export interface GameSummary {
@@ -203,6 +205,8 @@ export interface PlayerGameStats {
   shots_on_target: number;
   shots_off_target: number;
   goal_involvements: number;
+  tackles: number;
+  interceptions: number;
 }
 
 export function calculatePlayerGameBreakdown(
@@ -236,6 +240,9 @@ export function calculatePlayerGameBreakdown(
         goal_involvements: gameEvents.filter(
           (e) => e.event_type === "goal" || e.event_type === "assist",
         ).length,
+        tackles: gameEvents.filter((e) => e.event_type === "tackle").length,
+        interceptions: gameEvents.filter((e) => e.event_type === "interception")
+          .length,
       };
     })
     .sort(
@@ -263,6 +270,14 @@ function calcTeamStats(
     (e) => playerIds.has(e.player_id) && e.event_type === "key_pass",
   ).length;
 
+  const tackles = gameEvents.filter(
+    (e) => playerIds.has(e.player_id) && e.event_type === "tackle",
+  ).length;
+
+  const interceptions = gameEvents.filter(
+    (e) => playerIds.has(e.player_id) && e.event_type === "interception",
+  ).length;
+
   return {
     shots: totalShots,
     shotsOnTarget,
@@ -271,6 +286,8 @@ function calcTeamStats(
     shotConversion:
       totalShots > 0 ? Math.round((teamGoals / totalShots) * 100) : 0,
     keyPasses,
+    tackles,
+    interceptions,
   };
 }
 

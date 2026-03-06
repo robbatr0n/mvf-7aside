@@ -132,6 +132,16 @@ function TeamStatsPanel({
         team1Value={team1Stats.keyPasses}
         team2Value={team2Stats.keyPasses}
       />
+      <StatBar
+        label="Tackles"
+        team1Value={team1Stats.tackles}
+        team2Value={team2Stats.tackles}
+      />
+      <StatBar
+        label="Interceptions"
+        team1Value={team1Stats.interceptions}
+        team2Value={team2Stats.interceptions}
+      />
     </div>
   );
 }

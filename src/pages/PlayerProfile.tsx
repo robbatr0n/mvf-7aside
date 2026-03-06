@@ -169,7 +169,7 @@ export default function PlayerProfile() {
           </section>
         )}
 
-        {/* Attacking stats */}
+        {/* Attacking */}
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
             Attacking
@@ -221,12 +221,7 @@ export default function PlayerProfile() {
             {bestGame && bestGame.goal_involvements > 0 && (
               <StatRow
                 label="Best Game"
-                value={`${bestGame.goal_involvements} G+A (${new Date(
-                  bestGame.game.date,
-                ).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                })})`}
+                value={`${bestGame.goal_involvements} G+A (${new Date(bestGame.game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})`}
                 highlight
               />
             )}
@@ -234,45 +229,45 @@ export default function PlayerProfile() {
         </section>
 
         {/* Defending */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+        <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
             Defending
           </h2>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: "Tackles", value: playerStats.tackles },
-              { label: "Interceptions", value: playerStats.interceptions },
-              {
-                label: "Defensive Actions",
-                value: playerStats.defensive_actions,
-              },
-              {
-                label: "Tackles / Game",
-                value:
-                  playerStats.games_played > 0
-                    ? playerStats.tackles_per_game
-                    : "—",
-              },
-              {
-                label: "Int / Game",
-                value:
-                  playerStats.games_played > 0
-                    ? playerStats.interceptions_per_game
-                    : "—",
-              },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="bg-gray-800/50 rounded-xl p-4 text-center"
-              >
-                <p className="text-white font-bold text-xl">{value}</p>
-                <p className="text-gray-500 text-xs mt-1">{label}</p>
-              </div>
-            ))}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+            <StatRow
+              label="Tackles"
+              value={playerStats.tackles}
+              highlight={playerStats.tackles > 0}
+            />
+            <StatRow
+              label="Interceptions"
+              value={playerStats.interceptions}
+              highlight={playerStats.interceptions > 0}
+            />
+            <StatRow
+              label="Defensive Actions"
+              value={playerStats.defensive_actions}
+            />
+            <StatRow
+              label="Tackles per Game"
+              value={
+                playerStats.games_played > 0
+                  ? playerStats.tackles_per_game
+                  : "—"
+              }
+            />
+            <StatRow
+              label="Interceptions per Game"
+              value={
+                playerStats.games_played > 0
+                  ? playerStats.interceptions_per_game
+                  : "—"
+              }
+            />
           </div>
-        </div>
+        </section>
 
-        {/* Shooting stats */}
+        {/* Shooting */}
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
             Shooting
@@ -381,6 +376,12 @@ export default function PlayerProfile() {
                         KP
                       </th>
                       <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                        TKL
+                      </th>
+                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                        INT
+                      </th>
+                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
                         Result
                       </th>
                     </tr>
@@ -394,6 +395,8 @@ export default function PlayerProfile() {
                         key_passes,
                         shots_on_target,
                         goal_involvements,
+                        tackles,
+                        interceptions,
                       }) => {
                         const gp = gamePlayers.find(
                           (g) => g.game_id === game.id && g.player_id === id,
@@ -440,6 +443,12 @@ export default function PlayerProfile() {
                             </td>
                             <td className="text-center px-4 py-3.5 text-gray-300">
                               {key_passes > 0 ? key_passes : "—"}
+                            </td>
+                            <td className="text-center px-4 py-3.5 text-gray-300">
+                              {tackles > 0 ? tackles : "—"}
+                            </td>
+                            <td className="text-center px-4 py-3.5 text-gray-300">
+                              {interceptions > 0 ? interceptions : "—"}
                             </td>
                             <td
                               className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}
