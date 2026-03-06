@@ -213,8 +213,8 @@ export default function PlayerProfile() {
             <StatRow
               label="Best Scoring Streak"
               value={
-                playerStats.current_scoring_streak > 0
-                  ? `${playerStats.current_scoring_streak} game${playerStats.current_scoring_streak > 1 ? "s" : ""}`
+                playerStats.best_scoring_streak > 0
+                  ? `${playerStats.best_scoring_streak} game${playerStats.best_scoring_streak > 1 ? "s" : ""}`
                   : "—"
               }
             />

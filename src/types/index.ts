@@ -73,6 +73,7 @@ export interface PlayerStats {
   win_rate: number;
   form: ("W" | "L" | "D")[];
   current_scoring_streak: number;
+  best_scoring_streak: number;
   tackles: number;
   interceptions: number;
   defensive_actions: number;

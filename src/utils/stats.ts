@@ -150,6 +150,7 @@ export function calculatePlayerStats(
     win_rate,
     form,
     current_scoring_streak,
+    best_scoring_streak,
     tackles,
     interceptions,
     defensive_actions,
@@ -435,7 +436,8 @@ export function calculateGoalkeeperStats(
         if (goalsConceded === 0) cleanSheets++;
 
         // Win/loss/draw
-        if (game.winning_team === 0 || game.winning_team === null) {
+        if (game.winning_team === null) return;
+        if (game.winning_team === 0) {
           draws++;
           formHistory.push("D");
         } else if (game.winning_team === keeperTeam) {
