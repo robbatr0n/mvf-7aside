@@ -3,24 +3,27 @@ import { Link } from "react-router-dom";
 const CHANGELOG = [
   {
     version: "1.1.0",
-    date: "March 2026",
+    date: "6th March 2026",
     changes: [
       "Added per-game team stats to game summaries — shots, shots on target, accuracy, conversion and key passes shown for each team",
+      "Added goalkeeper leaderboard — saves, goals conceded, save percentage, clean sheets and form for dedicated goalkeepers",
+      "Added goalkeeper profile page with dedicated stats section",
+      "Goalkeepers excluded from outfield leaderboard and awards",
     ],
   },
   {
     version: "1.0.0",
-    date: "January 2026",
+    date: "1st March 2026",
     label: "Initial Release",
     changes: [
       "Player leaderboard with goals, assists, G+A, shots on target, key passes, shot accuracy, shot conversion and goals per game",
       "Game summaries with score, goal scorers and assisters",
       "Player profile pages with full stats breakdown and game-by-game history",
-      "Awards page — 20 awards across scoring, shooting, consistency, results and fun categories",
+      "Awards page — 20 awards across scoring, shooting, consistency, results and misc categories",
       "Best Partnership award tracking most common goal and assist combinations",
       "Win, loss and draw tracking with form badges showing last 5 games",
       "Guest player support",
-      "Tagger with inline goal and shot tagging, team assignments and live score",
+      "Private tagger to verify autmatic statistics",
     ],
   },
 ];

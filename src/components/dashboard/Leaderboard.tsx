@@ -130,7 +130,7 @@ export default function Leaderboard({ stats }: Props) {
                   <td className="px-5 py-3.5 text-white font-medium">
                     <Link
                       to={`/player/${s.player.id}`}
-                      className="hover:text-blue-400 transition-colors"
+                      className="hover:text-blue-400 transition-colors flex items-center gap-2"
                     >
                       {s.player.name}
                     </Link>

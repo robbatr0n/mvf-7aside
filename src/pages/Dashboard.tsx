@@ -10,6 +10,8 @@ import AwardCards from "../components/dashboard/AwardCards";
 import Leaderboard from "../components/dashboard/Leaderboard";
 import GameBreakdown from "../components/dashboard/GameBreakdown";
 import { Link } from "react-router-dom";
+import GoalkeeperLeaderboard from "../components/dashboard/GoalkeeperLeaderboard";
+import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 
 export default function Dashboard() {
   const { players, loading: playersLoading } = usePlayers();
@@ -17,6 +19,12 @@ export default function Dashboard() {
   const { games, loading: gamesLoading } = useGames();
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
+  const goalkeeperStats = useGoalkeeperStats(
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
 
   const gameSummaries = useMemo(
     () => calculateGameSummaries(games, players, events, gamePlayers),
@@ -58,6 +66,7 @@ export default function Dashboard() {
             </div>
             <AwardCards stats={stats} partnership={partnership} />
             <Leaderboard stats={stats} />
+            <GoalkeeperLeaderboard stats={goalkeeperStats} />
             <GameBreakdown summaries={gameSummaries} />
           </>
         )}

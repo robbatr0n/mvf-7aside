@@ -9,8 +9,23 @@ export interface Player {
   id: string
   name: string
   is_guest: boolean
+  is_goalkeeper: boolean
   exclude_from_awards: boolean
   created_at: string
+}
+
+export interface GoalkeeperStats {
+  player: Player
+  games: number
+  saves: number
+  goalsConceded: number
+  savePercentage: number
+  cleanSheets: number
+  goalsConcededPerGame: number
+  wins: number
+  losses: number
+  draws: number
+  form: ('W' | 'L' | 'D')[]
 }
 
 export interface Game {
