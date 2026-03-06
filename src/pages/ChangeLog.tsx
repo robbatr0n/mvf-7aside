@@ -2,6 +2,16 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: "1.2.0",
+    date: "6th March 2026",
+    changes: [
+      "Added tackle and interception tagging in the tagger",
+      "Added defending tab to player leaderboard — tackles, interceptions, defensive actions and per game rates",
+      "Added defensive stats section to player profiles",
+      "Added 5 new defending awards — Hardman, Sweeper, Enforcer, Tackle Hero and Interception Hero",
+    ],
+  },
+  {
     version: "1.1.0",
     date: "6th March 2026",
     changes: [

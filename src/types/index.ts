@@ -4,6 +4,8 @@ export type EventType =
   | 'shot_on_target'
   | 'shot_off_target'
   | 'key_pass'
+  | 'tackle'
+  | 'interception'
 
 export interface Player {
   id: string
@@ -68,7 +70,12 @@ export interface PlayerStats {
   wins: number
   losses: number
   draws: number
+  win_rate: number
   form: ('W' | 'L' | 'D')[]
   current_scoring_streak: number
-  best_scoring_streak: number
+  tackles: number
+  interceptions: number
+  defensive_actions: number
+  tackles_per_game: number
+  interceptions_per_game: number
 }

@@ -10,7 +10,12 @@ interface Props {
   onFinish: () => void;
 }
 
-type FlowType = "goal" | "shot_on_target" | "shot_off_target";
+type FlowType =
+  | "goal"
+  | "shot_on_target"
+  | "shot_off_target"
+  | "tackle"
+  | "interception";
 type FlowStep = "scorer" | "assister" | "shooter" | "keypasser";
 
 interface PendingFlow {
@@ -247,6 +252,18 @@ export default function EventLogger({
               className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors"
             >
               🔴 Off Target
+            </button>
+            <button
+              onClick={() => startFlow("tackle")}
+              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors"
+            >
+              💪 Tackle
+            </button>
+            <button
+              onClick={() => startFlow("interception")}
+              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors col-span-2"
+            >
+              ✋ Interception
             </button>
           </div>
         )}

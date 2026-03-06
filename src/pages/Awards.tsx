@@ -67,6 +67,16 @@ const SECTIONS = [
     titles: ["Clinical", "Wasteful", "Trigger Happy", "Nearly Man"],
   },
   {
+    title: "Defending",
+    titles: [
+      "Hardman",
+      "Sweeper",
+      "Enforcer",
+      "Tackle Hero",
+      "Interception Hero",
+    ],
+  },
+  {
     title: "Consistency",
     titles: [
       "Reliable",

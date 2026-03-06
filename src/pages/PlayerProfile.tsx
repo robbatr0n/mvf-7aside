@@ -213,8 +213,8 @@ export default function PlayerProfile() {
             <StatRow
               label="Best Scoring Streak"
               value={
-                playerStats.best_scoring_streak > 0
-                  ? `${playerStats.best_scoring_streak} game${playerStats.best_scoring_streak > 1 ? "s" : ""}`
+                playerStats.current_scoring_streak > 0
+                  ? `${playerStats.current_scoring_streak} game${playerStats.current_scoring_streak > 1 ? "s" : ""}`
                   : "—"
               }
             />
@@ -232,6 +232,45 @@ export default function PlayerProfile() {
             )}
           </div>
         </section>
+
+        {/* Defending */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+            Defending
+          </h2>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Tackles", value: playerStats.tackles },
+              { label: "Interceptions", value: playerStats.interceptions },
+              {
+                label: "Defensive Actions",
+                value: playerStats.defensive_actions,
+              },
+              {
+                label: "Tackles / Game",
+                value:
+                  playerStats.games_played > 0
+                    ? playerStats.tackles_per_game
+                    : "—",
+              },
+              {
+                label: "Int / Game",
+                value:
+                  playerStats.games_played > 0
+                    ? playerStats.interceptions_per_game
+                    : "—",
+              },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                className="bg-gray-800/50 rounded-xl p-4 text-center"
+              >
+                <p className="text-white font-bold text-xl">{value}</p>
+                <p className="text-gray-500 text-xs mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Shooting stats */}
         <section className="space-y-3">
