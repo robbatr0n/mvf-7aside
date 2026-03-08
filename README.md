@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+# 7-aside Stats Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack football analytics platform built to track and analyse player performance across a weekly 7-aside football group. Built for real users with real data, analysed and tagged live each week.
 
-Currently, two official plugins are available:
+**[Live Demo →](https://palceholder)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Note:** The live demo uses anonymised player data to protect the privacy of the real users. The data is also not updated unlike the production version. 
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Match Tagging**
+- Password-protected live tagger for recording goals, assists, shots, tackles and interceptions and more in real time
+- Sequential event flows e.g. goal → assister → key pass chains
+- Continue tagging existing games to backfill historical stats
+- Undo support with cascade removal of linked events
 
-## Expanding the ESLint configuration
+**Leaderboards**
+- Attacking leaderboard — goals, assists, G+A, shots on target, key passes, shot accuracy, conversion and goals per game
+- Defending leaderboard — tackles, interceptions, defensive actions and per-game rates
+- Dedicated goalkeeper leaderboard — saves, goals conceded, save percentage and clean sheets
+- Form badges showing last 5 game results per player
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Player Profiles**
+- Full attacking, defending and shooting stat breakdown
+- Game-by-game history table
+- Awards won displayed on profile
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**Game Summaries**
+- Per-game score and goal scorers with assisters
+- Team stats comparison — shots, accuracy, conversion, key passes, tackles and interceptions
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**Awards**
+- 25+ auto-calculated awards across scoring, shooting, defending, consistency, results and misc categories
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**Goalkeeper Tracking**
+- Saves derived automatically from unlinked shots on target
+- Per-game goalkeeper stats with clean sheet tracking
+- Separate goalkeeper leaderboard and profile stats section
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Layer | Technology |
+|---|---|
+| Frontend | React, TypeScript, Tailwind CSS |
+| Database | PostgreSQL via Supabase |
+| Auth | Row-level security, password-protected tagger |
+| Deployment | Vercel |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Screenshots
+
+*Coming soon*
+
+---
+
+Built by [Rob](https://github.com/robbatr0n)
