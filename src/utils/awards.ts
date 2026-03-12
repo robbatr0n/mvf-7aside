@@ -631,6 +631,16 @@ export function calculateAwards(
     noWinner: false,
   };
 
+  const hardestWorker: Award = {
+    emoji: "🏃",
+    title: "Hardest Worker",
+    description:
+      "Works the hardest and always gives 100% despite what Mark says",
+    winners: ["Aqeel Zaman"],
+    value: "",
+    noWinner: false,
+  };
+
   return {
     awards: [
       topScorer,
@@ -661,6 +671,7 @@ export function calculateAwards(
       celebrated,
       tacklesPerGame,
       interceptionsPerGame,
+      hardestWorker,
     ],
     partnership: bestPartnership,
   };

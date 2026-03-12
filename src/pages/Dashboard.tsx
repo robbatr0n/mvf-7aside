@@ -39,6 +39,11 @@ export default function Dashboard() {
   const loading =
     playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
 
+  console.log(
+    "latest game events:",
+    events.filter((e) => e.game_id === "e951688b-2fc5-4111-9e3b-865b1c94f4ef"),
+  );
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">

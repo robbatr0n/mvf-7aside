@@ -53,6 +53,10 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
 
 const SECTIONS = [
   {
+    title: "📌 Pinned",
+    titles: ["Hardest Worker"],
+  },
+  {
     title: "Scoring",
     titles: [
       "Top Scorer",
