@@ -20,7 +20,7 @@ export default function Nav() {
         <Link to="/" className="flex items-center gap-2.5 group">
           <span className="text-xl">⚽</span>
           <span className="font-bold text-white tracking-tight text-sm">
-            MVF Wednesday Sessions
+            MVF
           </span>
         </Link>
 

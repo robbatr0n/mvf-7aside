@@ -9,7 +9,7 @@ import { calculateAwards } from "../utils/awards";
 import AwardCards from "../components/dashboard/AwardCards";
 import Leaderboard from "../components/dashboard/Leaderboard";
 import GameBreakdown from "../components/dashboard/GameBreakdown";
-import { Link } from "react-router-dom";
+import InfoBar from "../components/dashboard/InfoBar";
 import GoalkeeperLeaderboard from "../components/dashboard/GoalkeeperLeaderboard";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 
@@ -39,11 +39,6 @@ export default function Dashboard() {
   const loading =
     playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
 
-  console.log(
-    "latest game events:",
-    events.filter((e) => e.game_id === "e951688b-2fc5-4111-9e3b-865b1c94f4ef"),
-  );
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
@@ -58,17 +53,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="flex justify-between gap-3">
-              <p className="text-gray-600 text-xs">
-                {games.length} {games.length === 1 ? "game" : "games"} tracked
-              </p>
-              <Link
-                to="/changelog"
-                className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
-              >
-                Changelog
-              </Link>
-            </div>
+            <InfoBar games={games} />
             <AwardCards stats={stats} partnership={partnership} />
             <Leaderboard
               stats={stats}

@@ -26,7 +26,7 @@ export default function GoalkeeperLeaderboard({ stats }: Props) {
   return (
     <div className="space-y-3">
       <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-        Goalkeepers
+        Goalkeeper Stats
       </h2>
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">

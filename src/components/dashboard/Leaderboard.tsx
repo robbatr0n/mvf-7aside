@@ -35,7 +35,7 @@ const ATTACKING_HEADERS = [
   { key: "goal_involvements", label: "G+A", tooltip: "Goals + Assists" },
   { key: "shots_on_target", label: "SOT", tooltip: "Shots on Target" },
   { key: "key_passes", label: "KP", tooltip: "Key Passes" },
-  { key: "shot_accuracy", label: "Acc%", tooltip: "Shot Accuracy" },
+  { key: "shot_accuracy", label: "Acc%", tooltip: "Shot Acuracy" },
   { key: "shot_conversion", label: "Conv%", tooltip: "Shot Conversion" },
   { key: "goals_per_game", label: "G/GM", tooltip: "Goals per Game" },
 ];
@@ -113,11 +113,11 @@ export default function Leaderboard({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
           Player Stats
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setView("overall")}
@@ -140,6 +140,9 @@ export default function Leaderboard({
               Last 3
             </button>
           </div>
+
+          <div className="w-px h-4 bg-gray-700" />
+
           <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setTab("attacking")}
@@ -149,7 +152,8 @@ export default function Leaderboard({
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              ⚽ Attacking
+              <span className="sm:hidden">⚽</span>
+              <span className="hidden sm:inline">⚽ Attacking</span>
             </button>
             <button
               onClick={() => setTab("defending")}
@@ -159,7 +163,8 @@ export default function Leaderboard({
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              💪 Defending
+              <span className="sm:hidden">💪</span>
+              <span className="hidden sm:inline">💪 Defending</span>
             </button>
           </div>
         </div>
