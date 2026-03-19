@@ -100,7 +100,7 @@ const SECTIONS = [
   },
   {
     title: "Misc",
-    titles: ["Ghost", "Not Too Cool 4 Skool"],
+    titles: ["Not Too Cool 4 Skool"],
   },
 ];
 

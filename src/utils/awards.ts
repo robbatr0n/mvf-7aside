@@ -428,7 +428,7 @@ export function calculateAwards(
     description: `Most games with zero goals or assists (min ${MIN_GAMES} games)`,
     winners: ghostWinners,
     value: `${mostBlankGames} blank game${mostBlankGames !== 1 ? "s" : ""}`,
-    noWinner: ghostWinners.length === 0,
+    noWinner: true,
   };
 
   // Best Partnership
