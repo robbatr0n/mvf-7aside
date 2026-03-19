@@ -641,9 +641,48 @@ export function calculateAwards(
     noWinner: false,
   };
 
+  // Goal Machine — most goals in a single game
+  const bestSingleGameGoals = new Map<string, number>();
+  events.forEach((e) => {
+    if (e.event_type !== "goal") return;
+    const player = players.find((p) => p.id === e.player_id);
+    if (!player || player.is_guest) return;
+    const key = `${e.player_id}:${e.game_id}`;
+    bestSingleGameGoals.set(key, (bestSingleGameGoals.get(key) ?? 0) + 1);
+  });
+
+  const bestSingleGameMap = new Map<string, number>();
+  bestSingleGameGoals.forEach((count, key) => {
+    const playerId = key.split(":")[0];
+    const current = bestSingleGameMap.get(playerId) ?? 0;
+    if (count > current) bestSingleGameMap.set(playerId, count);
+  });
+
+  const topSingleGameScore = Math.max(
+    0,
+    ...Array.from(bestSingleGameMap.values()),
+  );
+  const goalMachineWinners = eligibleStats
+    .filter(
+      (s) =>
+        (bestSingleGameMap.get(s.player.id) ?? 0) === topSingleGameScore &&
+        topSingleGameScore > 0,
+    )
+    .map((s) => s.player.name);
+
+  const goalMachine: Award = {
+    emoji: "💥",
+    title: "Goal Machine",
+    description: "Most goals in a single game",
+    winners: goalMachineWinners,
+    value: `${topSingleGameScore} goals in one game`,
+    noWinner: goalMachineWinners.length === 0,
+  };
+
   return {
     awards: [
       topScorer,
+      goalMachine,
       playmaker,
       mostInvolved,
       hatTrickHero,

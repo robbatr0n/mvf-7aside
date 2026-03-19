@@ -472,3 +472,50 @@ export function calculateGoalkeeperStats(
     })
     .sort((a, b) => b.savePercentage - a.savePercentage);
 }
+
+export function calculateLastNPlayerStats(
+  players: Player[],
+  events: Event[],
+  games: Game[],
+  gamePlayers: GamePlayer[],
+  n: number,
+): PlayerStats[] {
+  return players
+    .filter((p) => !p.is_guest && !p.is_goalkeeper)
+    .map((player) => {
+      // Find this player's last N games by date
+      const playerGameEntries = gamePlayers
+        .filter((gp) => gp.player_id === player.id)
+        .map((gp) => {
+          const game = games.find((g) => g.id === gp.game_id);
+          return game ? { game, team: gp.team, game_id: gp.game_id } : null;
+        })
+        .filter(Boolean) as { game: Game; team: number; game_id: string }[];
+
+      const lastNEntries = [...playerGameEntries]
+        .sort(
+          (a, b) =>
+            new Date(b.game.date).getTime() - new Date(a.game.date).getTime(),
+        )
+        .slice(0, n);
+
+      const lastNGameIds = new Set(lastNEntries.map((e) => e.game_id));
+
+      // Filter events to last N games only
+      const filteredEvents = events.filter(
+        (e) => e.player_id === player.id && lastNGameIds.has(e.game_id),
+      );
+      const filteredGamePlayers = gamePlayers.filter(
+        (gp) => gp.player_id === player.id && lastNGameIds.has(gp.game_id),
+      );
+
+      return calculatePlayerStats(
+        player,
+        filteredEvents,
+        games,
+        filteredGamePlayers,
+      );
+    })
+    .filter((s) => s.games_played > 0)
+    .sort((a, b) => b.goal_involvements - a.goal_involvements);
+}

@@ -61,6 +61,7 @@ const SECTIONS = [
     titles: [
       "Top Scorer",
       "Playmaker",
+      "Goal Machine",
       "Most Involved",
       "Hat Trick Hero",
       "Chance Creator",

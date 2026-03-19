@@ -2,6 +2,13 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: "1.3.0",
+    date: "March 2026",
+    changes: [
+      "Added Last 3 games toggle to leaderboard — view attacking and defending stats filtered to each player's most recent 3 games",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "6th March 2026",
     changes: [

@@ -70,7 +70,13 @@ export default function Dashboard() {
               </Link>
             </div>
             <AwardCards stats={stats} partnership={partnership} />
-            <Leaderboard stats={stats} />
+            <Leaderboard
+              stats={stats}
+              players={players}
+              events={events}
+              games={games}
+              gamePlayers={gamePlayers}
+            />
             <GoalkeeperLeaderboard stats={goalkeeperStats} />
             <GameBreakdown summaries={gameSummaries} />
           </>

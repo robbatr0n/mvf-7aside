@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlayerStats } from "../../types";
+import { calculateLastNPlayerStats } from "../../utils/stats";
+import type { Event, Game, GamePlayer, Player } from "../../types";
 
 interface Props {
   stats: PlayerStats[];
+  players: Player[];
+  events: Event[];
+  games: Game[];
+  gamePlayers: GamePlayer[];
 }
 
 type Tab = "attacking" | "defending";
@@ -75,15 +81,33 @@ function Tooltip({
   );
 }
 
-export default function Leaderboard({ stats }: Props) {
+export default function Leaderboard({
+  stats,
+  players,
+  events,
+  games,
+  gamePlayers,
+}: Props) {
   const [tab, setTab] = useState<Tab>("attacking");
+  const [view, setView] = useState<"overall" | "last3">("overall");
+
+  const last3Stats = useMemo(
+    () => calculateLastNPlayerStats(players, events, games, gamePlayers, 3),
+    [players, events, games, gamePlayers],
+  );
 
   if (stats.length === 0) return null;
 
+  const activeStats = view === "overall" ? stats : last3Stats;
+
   const sortedStats =
     tab === "attacking"
-      ? [...stats].sort((a, b) => b.goal_involvements - a.goal_involvements)
-      : [...stats].sort((a, b) => b.defensive_actions - a.defensive_actions);
+      ? [...activeStats].sort(
+          (a, b) => b.goal_involvements - a.goal_involvements,
+        )
+      : [...activeStats].sort(
+          (a, b) => b.defensive_actions - a.defensive_actions,
+        );
 
   const headers = tab === "attacking" ? ATTACKING_HEADERS : DEFENDING_HEADERS;
 
@@ -93,27 +117,51 @@ export default function Leaderboard({ stats }: Props) {
         <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
           Player Stats
         </h2>
-        <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
-          <button
-            onClick={() => setTab("attacking")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              tab === "attacking"
-                ? "bg-gray-700 text-white"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            ⚽ Attacking
-          </button>
-          <button
-            onClick={() => setTab("defending")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              tab === "defending"
-                ? "bg-gray-700 text-white"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            💪 Defending
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
+            <button
+              onClick={() => setView("overall")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                view === "overall"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              Overall
+            </button>
+            <button
+              onClick={() => setView("last3")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                view === "last3"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              Last 3
+            </button>
+          </div>
+          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
+            <button
+              onClick={() => setTab("attacking")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === "attacking"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              ⚽ Attacking
+            </button>
+            <button
+              onClick={() => setTab("defending")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === "defending"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              💪 Defending
+            </button>
+          </div>
         </div>
       </div>
 
