@@ -51,6 +51,7 @@ export interface Event {
   event_type: EventType;
   related_event_id: string | null;
   team_override: number | null;
+  clip_url: string | null;
   created_at: string;
 }
 

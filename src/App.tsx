@@ -6,6 +6,8 @@ import Awards from "./pages/Awards";
 import Tagger from "./pages/Tagger";
 import Login from "./pages/Login";
 import Changelog from "./pages/ChangeLog";
+import ClipManager from "./pages/ClipManager";
+import PlayerGoals from "./pages/PlayerGoals";
 
 export default function App() {
   return (
@@ -17,11 +19,13 @@ export default function App() {
           <Route path="/awards" element={<Awards />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
           <Route path="/changelog" element={<Changelog />} />
+          <Route path="/player/:id/goals" element={<PlayerGoals />} />
         </Route>
 
         {/* Standalone pages without nav */}
         <Route path="/login" element={<Login />} />
         <Route path="/tag" element={<Tagger />} />
+        <Route path="/clips" element={<ClipManager />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

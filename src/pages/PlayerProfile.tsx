@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { usePlayers } from "../hooks/usePlayers";
 import { useEvents } from "../hooks/useEvents";
@@ -7,6 +7,7 @@ import { useGamePlayers } from "../hooks/useGamePlayers";
 import { useStats } from "../hooks/useStats";
 import { calculatePlayerGameBreakdown } from "../utils/stats";
 import { calculateAwards } from "../utils/awards";
+import VideoModal from "../components/shared/VideoModal";
 
 interface StatRowProps {
   label: string;
@@ -34,6 +35,10 @@ export default function PlayerProfile() {
   const { games, loading: gamesLoading } = useGames();
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
+  const [activeClip, setActiveClip] = useState<{
+    src: string;
+    label: string;
+  } | null>(null);
 
   const loading =
     playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
@@ -168,6 +173,79 @@ export default function PlayerProfile() {
             </div>
           </section>
         )}
+
+        {/* Goals reel */}
+        {(() => {
+          const goalClips = events.filter(
+            (e) => e.player_id === id && e.event_type === "goal" && e.clip_url,
+          );
+          if (goalClips.length === 0) return null;
+          return (
+            <>
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                    Goals
+                  </h2>
+                  <Link
+                    to={`/player/${id}/goals`}
+                    className="text-gray-500 hover:text-white text-xs transition-colors"
+                  >
+                    View all →
+                  </Link>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {goalClips.map((event, i) => {
+                    const game = games.find((g) => g.id === event.game_id);
+                    return (
+                      <div
+                        key={event.id}
+                        className="flex-none w-36 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden cursor-pointer"
+                        onClick={() =>
+                          setActiveClip({
+                            src: event.clip_url!,
+                            label: `Goal ${i + 1}${game ? ` — ${new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}`,
+                          })
+                        }
+                      >
+                        <div className="relative">
+                          <video
+                            src={event.clip_url!}
+                            className="w-full aspect-video object-cover"
+                            preload="metadata"
+                            playsInline
+                            muted
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center">
+                              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-500 text-xs px-2 py-1.5">
+                          {game
+                            ? new Date(game.date).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                              })
+                            : "—"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {activeClip && (
+                <VideoModal
+                  src={activeClip.src}
+                  label={activeClip.label}
+                  onClose={() => setActiveClip(null)}
+                />
+              )}
+            </>
+          );
+        })()}
 
         {/* Attacking */}
         <section className="space-y-3">
