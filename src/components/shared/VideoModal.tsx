@@ -18,7 +18,9 @@ export default function VideoModal({ src, label, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.95)" }}
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="w-full max-w-2xl space-y-2"
@@ -37,6 +39,7 @@ export default function VideoModal({ src, label, onClose }: Props) {
           src={src}
           className="w-full rounded-xl"
           autoPlay
+          muted
           controls
           playsInline
         />
