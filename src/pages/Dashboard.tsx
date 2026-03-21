@@ -12,6 +12,7 @@ import GameBreakdown from "../components/dashboard/GameBreakdown";
 import InfoBar from "../components/dashboard/InfoBar";
 import GoalkeeperLeaderboard from "../components/dashboard/GoalkeeperLeaderboard";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
+import TeamOfTheSeason from "../components/dashboard/TeamOfTheSeason";
 
 export default function Dashboard() {
   const { players, loading: playersLoading } = usePlayers();
@@ -63,6 +64,7 @@ export default function Dashboard() {
               gamePlayers={gamePlayers}
             />
             <GoalkeeperLeaderboard stats={goalkeeperStats} />
+            <TeamOfTheSeason stats={stats} goalkeeperStats={goalkeeperStats} />
             <GameBreakdown summaries={gameSummaries} />
           </>
         )}

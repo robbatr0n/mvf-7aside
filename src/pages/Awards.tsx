@@ -57,19 +57,22 @@ const SECTIONS = [
     titles: ["Hardest Worker"],
   },
   {
-    title: "Scoring",
+    title: "Attacking",
     titles: [
       "Top Scorer",
-      "Playmaker",
       "Goal Machine",
+      "Playmaker",
+      "Assist Hero",
       "Most Involved",
-      "Hat Trick Hero",
+      "One Game Wonder",
       "Chance Creator",
+      "Key Pass Hero",
+      "Hat Trick Hero",
     ],
   },
   {
     title: "Shooting",
-    titles: ["Clinical", "Wasteful", "Trigger Happy", "Nearly Man"],
+    titles: ["Clinical", "Trigger Happy", "Nearly Man"],
   },
   {
     title: "Defending",
@@ -85,14 +88,7 @@ const SECTIONS = [
   },
   {
     title: "Consistency",
-    titles: [
-      "Reliable",
-      "Always There",
-      "One Game Wonder",
-      "On Fire",
-      "Mr Consistent",
-      "Boom or Bust",
-    ],
+    titles: ["Reliable", "Always There", "On Fire"],
   },
   {
     title: "Results",

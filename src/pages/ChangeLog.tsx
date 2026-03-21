@@ -2,6 +2,19 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: "1.4.0",
+    date: "March 2026",
+    changes: [
+      "Added goal video highlights — clips viewable on player profiles with a full goals archive page per player",
+      "Added Team of the Season — composite score across goals, assists, defensive actions and win rate displayed on a pitch graphic",
+      "Added Goal Machine award — most goals in a single game",
+      "Added Assist Hero award — most assists in a single game",
+      "Added Key Pass Hero award — most key passes in a single game",
+      "Removed Wasteful, Mr Consistent and Boom or Bust awards",
+      "Renamed Scoring section to Attacking, added One Game Wonder",
+    ],
+  },
+  {
     version: "1.3.0",
     date: "March 2026",
     changes: [

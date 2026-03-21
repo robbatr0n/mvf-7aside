@@ -1,4 +1,5 @@
 import type { Event, Game, GamePlayer, PlayerStats, Player } from "../types";
+import type { EventType } from "../types";
 
 export interface Award {
   emoji: string;
@@ -30,6 +31,42 @@ function topN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
   return sorted.filter((s) => s[key] === best);
 }
 
+function bestSingleGameStat(
+  eventType: EventType,
+  eligibleStats: PlayerStats[],
+  events: Event[],
+  players: Player[],
+): { winners: string[]; best: number } {
+  const byGameKey = new Map<string, number>();
+  events.forEach((e) => {
+    if (e.event_type !== eventType) return;
+    const player = players.find((p) => p.id === e.player_id);
+    if (!player || player.is_guest) return;
+    const key = `${e.player_id}:${e.game_id}`;
+    byGameKey.set(key, (byGameKey.get(key) ?? 0) + 1);
+  });
+
+  const bestByPlayer = new Map<string, number>();
+  byGameKey.forEach((count, key) => {
+    const playerId = key.split(":")[0];
+    const current = bestByPlayer.get(playerId) ?? 0;
+    if (count > current) bestByPlayer.set(playerId, count);
+  });
+
+  const best = Math.max(
+    0,
+    ...Array.from(bestByPlayer.entries())
+      .filter(([playerId]) => !players.find((p) => p.id === playerId)?.is_guest)
+      .map(([, count]) => count),
+  );
+
+  const winners = eligibleStats
+    .filter((s) => (bestByPlayer.get(s.player.id) ?? 0) === best && best > 0)
+    .map((s) => s.player.name);
+
+  return { winners, best };
+}
+
 export function calculateAwards(
   stats: PlayerStats[],
   events: Event[],
@@ -37,7 +74,6 @@ export function calculateAwards(
   gamePlayers: GamePlayer[],
   players: Player[],
 ): { awards: Award[]; partnership: PartnershipAward | null } {
-  // Filter out players excluded from awards
   const eligibleStats = stats.filter((s) => !s.player.exclude_from_awards);
   const qualified = eligibleStats.filter((s) => s.games_played >= MIN_GAMES);
   const shotQualified = eligibleStats.filter(
@@ -55,6 +91,22 @@ export function calculateAwards(
     noWinner: !topScorers[0] || topScorers[0].goals === 0,
   };
 
+  // Goal Machine
+  const goalMachineResult = bestSingleGameStat(
+    "goal",
+    eligibleStats,
+    events,
+    players,
+  );
+  const goalMachine: Award = {
+    emoji: "💥",
+    title: "Goal Machine",
+    description: "Most goals in a single game",
+    winners: goalMachineResult.winners,
+    value: `${goalMachineResult.best} goals in one game`,
+    noWinner: goalMachineResult.winners.length === 0,
+  };
+
   // Playmaker
   const playmakers = topN(eligibleStats, "assists");
   const playmaker: Award = {
@@ -66,6 +118,22 @@ export function calculateAwards(
     noWinner: !playmakers[0] || playmakers[0].assists === 0,
   };
 
+  // Assist Hero
+  const assistHeroResult = bestSingleGameStat(
+    "assist",
+    eligibleStats,
+    events,
+    players,
+  );
+  const assistHero: Award = {
+    emoji: "🎯",
+    title: "Assist Hero",
+    description: "Most assists in a single game",
+    winners: assistHeroResult.winners,
+    value: `${assistHeroResult.best} assists in one game`,
+    noWinner: assistHeroResult.winners.length === 0,
+  };
+
   // Most Involved
   const involved = topN(eligibleStats, "goal_involvements");
   const mostInvolved: Award = {
@@ -75,6 +143,68 @@ export function calculateAwards(
     winners: involved.map((s) => s.player.name),
     value: `${involved[0]?.goal_involvements ?? 0} G+A`,
     noWinner: !involved[0] || involved[0].goal_involvements === 0,
+  };
+
+  const bestGameByPlayer = new Map<string, number>();
+  events.forEach((e) => {
+    if (e.event_type !== "goal" && e.event_type !== "assist") return;
+    const player = players.find((p) => p.id === e.player_id);
+    if (!player || player.is_guest) return;
+    const key = `${e.player_id}:${e.game_id}`;
+    bestGameByPlayer.set(key, (bestGameByPlayer.get(key) ?? 0) + 1);
+  });
+  const bestSingleGA = new Map<string, number>();
+  bestGameByPlayer.forEach((count, key) => {
+    const playerId = key.split(":")[0];
+    const current = bestSingleGA.get(playerId) ?? 0;
+    if (count > current) bestSingleGA.set(playerId, count);
+  });
+  const bestSingle = Math.max(
+    0,
+    ...Array.from(bestSingleGA.entries())
+      .filter(([playerId]) => !players.find((p) => p.id === playerId)?.is_guest)
+      .map(([, count]) => count),
+  );
+  const wonderWinners = eligibleStats
+    .filter(
+      (s) =>
+        (bestSingleGA.get(s.player.id) ?? 0) === bestSingle && bestSingle > 0,
+    )
+    .map((s) => s.player.name);
+  const oneGameWonder: Award = {
+    emoji: "🌟",
+    title: "One Game Wonder",
+    description: "Best single game G+A",
+    winners: wonderWinners,
+    value: `${bestSingle} G+A in one game`,
+    noWinner: wonderWinners.length === 0,
+  };
+
+  // Chance Creator
+  const creators = topN(eligibleStats, "key_passes");
+  const chanceCreator: Award = {
+    emoji: "🎪",
+    title: "Chance Creator",
+    description: "Most key passes",
+    winners: creators.map((s) => s.player.name),
+    value: `${creators[0]?.key_passes ?? 0} key passes`,
+    noWinner: !creators[0] || creators[0].key_passes === 0,
+  };
+
+  // Key Pass Hero
+  const keyPassHeroResult = bestSingleGameStat(
+    "key_pass",
+    eligibleStats,
+    events,
+    players,
+  );
+  const keyPassHero: Award = {
+    emoji: "🎪",
+    title: "Key Pass Hero",
+    description: "Most key passes in a single game",
+    winners: keyPassHeroResult.winners,
+    value: `${keyPassHeroResult.best} key passes in one game`,
+    noWinner: keyPassHeroResult.winners.length === 0,
   };
 
   // Hat Trick Hero
@@ -96,17 +226,6 @@ export function calculateAwards(
     noWinner: hatTrickHeroes.length === 0,
   };
 
-  // Chance Creator
-  const creators = topN(eligibleStats, "key_passes");
-  const chanceCreator: Award = {
-    emoji: "🎪",
-    title: "Chance Creator",
-    description: "Most key passes",
-    winners: creators.map((s) => s.player.name),
-    value: `${creators[0]?.key_passes ?? 0} key passes`,
-    noWinner: !creators[0] || creators[0].key_passes === 0,
-  };
-
   // Clinical
   const clinicalSorted = [...shotQualified].sort(
     (a, b) => b.shot_conversion - a.shot_conversion,
@@ -122,24 +241,6 @@ export function calculateAwards(
     winners: clinicalWinners.map((s) => s.player.name),
     value: bestConversion !== undefined ? `${bestConversion}% conversion` : "",
     noWinner: clinicalWinners.length === 0,
-  };
-
-  // Wasteful
-  const wastefulSorted = [...shotQualified].sort(
-    (a, b) => a.shot_conversion - b.shot_conversion,
-  );
-  const worstConversion = wastefulSorted[0]?.shot_conversion;
-  const wastefulWinners = wastefulSorted.filter(
-    (s) => s.shot_conversion === worstConversion,
-  );
-  const wasteful: Award = {
-    emoji: "💀",
-    title: "Wasteful",
-    description: `Worst shot conversion (min ${MIN_SHOTS} shots)`,
-    winners: wastefulWinners.map((s) => s.player.name),
-    value:
-      worstConversion !== undefined ? `${worstConversion}% conversion` : "",
-    noWinner: wastefulWinners.length === 0,
   };
 
   // Trigger Happy
@@ -158,6 +259,27 @@ export function calculateAwards(
     winners: triggerWinners.map((s) => s.player.name),
     value: `${mostShots} shots`,
     noWinner: triggerWinners.length === 0,
+  };
+
+  // Nearly Man
+  const nearlyManSorted = [...eligibleStats]
+    .filter((s) => s.shots_on_target > s.goals)
+    .sort(
+      (a, b) => b.shots_on_target - b.goals - (a.shots_on_target - a.goals),
+    );
+  const mostSaved = nearlyManSorted[0]
+    ? nearlyManSorted[0].shots_on_target - nearlyManSorted[0].goals
+    : 0;
+  const nearlyWinners = nearlyManSorted.filter(
+    (s) => s.shots_on_target - s.goals === mostSaved,
+  );
+  const nearlyMan: Award = {
+    emoji: "😬",
+    title: "Nearly Man",
+    description: "Most shots on target that were saved",
+    winners: nearlyWinners.map((s) => s.player.name),
+    value: `${mostSaved} saved`,
+    noWinner: nearlyWinners.length === 0,
   };
 
   // Reliable
@@ -189,44 +311,6 @@ export function calculateAwards(
     winners: alwaysThereWinners.map((s) => s.player.name),
     value: `${maxGames} games`,
     noWinner: alwaysThereWinners.length === 0,
-  };
-
-  // One Game Wonder
-  const bestGameByPlayer = new Map<string, number>();
-  events.forEach((e) => {
-    if (e.event_type !== "goal" && e.event_type !== "assist") return;
-    const player = players.find((p) => p.id === e.player_id);
-    if (!player || player.is_guest) return;
-    const key = `${e.player_id}:${e.game_id}`;
-    bestGameByPlayer.set(key, (bestGameByPlayer.get(key) ?? 0) + 1);
-  });
-
-  const bestSingleGame = new Map<string, number>();
-  bestGameByPlayer.forEach((count, key) => {
-    const playerId = key.split(":")[0];
-    const current = bestSingleGame.get(playerId) ?? 0;
-    if (count > current) bestSingleGame.set(playerId, count);
-  });
-
-  const bestSingle = Math.max(
-    0,
-    ...Array.from(bestSingleGame.entries())
-      .filter(([playerId]) => !players.find((p) => p.id === playerId)?.is_guest)
-      .map(([, count]) => count),
-  );
-  const wonderWinners = eligibleStats
-    .filter(
-      (s) =>
-        (bestSingleGame.get(s.player.id) ?? 0) === bestSingle && bestSingle > 0,
-    )
-    .map((s) => s.player.name);
-  const oneGameWonder: Award = {
-    emoji: "🌟",
-    title: "One Game Wonder",
-    description: "Best single game G+A",
-    winners: wonderWinners,
-    value: `${bestSingle} G+A in one game`,
-    noWinner: wonderWinners.length === 0,
   };
 
   // On Fire
@@ -287,93 +371,6 @@ export function calculateAwards(
     noWinner: !unluckyWinners[0] || unluckyWinners[0].losses === 0,
   };
 
-  // Nearly Man
-  const nearlyManSorted = [...eligibleStats]
-    .filter((s) => s.shots_on_target > s.goals)
-    .sort(
-      (a, b) => b.shots_on_target - b.goals - (a.shots_on_target - a.goals),
-    );
-  const mostSaved = nearlyManSorted[0]
-    ? nearlyManSorted[0].shots_on_target - nearlyManSorted[0].goals
-    : 0;
-  const nearlyWinners = nearlyManSorted.filter(
-    (s) => s.shots_on_target - s.goals === mostSaved,
-  );
-  const nearlyMan: Award = {
-    emoji: "😬",
-    title: "Nearly Man",
-    description: "Most shots on target that were saved",
-    winners: nearlyWinners.map((s) => s.player.name),
-    value: `${mostSaved} saved`,
-    noWinner: nearlyWinners.length === 0,
-  };
-
-  // Boom or Bust
-  const varianceByPlayer = new Map<string, number>();
-  eligibleStats.forEach((s) => {
-    if (s.games_played < MIN_GAMES) return;
-    const gaByGame: number[] = [];
-    games.forEach((game) => {
-      const played = gamePlayers.some(
-        (gp) => gp.player_id === s.player.id && gp.game_id === game.id,
-      );
-      if (!played) return;
-      const ga = events.filter(
-        (e) =>
-          e.player_id === s.player.id &&
-          e.game_id === game.id &&
-          (e.event_type === "goal" || e.event_type === "assist"),
-      ).length;
-      gaByGame.push(ga);
-    });
-    if (gaByGame.length < MIN_GAMES) return;
-    const mean = gaByGame.reduce((a, b) => a + b, 0) / gaByGame.length;
-    const variance =
-      gaByGame.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) /
-      gaByGame.length;
-    varianceByPlayer.set(s.player.id, Math.round(variance * 100) / 100);
-  });
-
-  const highestVariance = Math.max(0, ...Array.from(varianceByPlayer.values()));
-  const boomBustWinners = eligibleStats
-    .filter(
-      (s) =>
-        (varianceByPlayer.get(s.player.id) ?? 0) === highestVariance &&
-        highestVariance > 0,
-    )
-    .map((s) => s.player.name);
-  const boomOrBust: Award = {
-    emoji: "🎰",
-    title: "Boom or Bust",
-    description: `Most inconsistent performer (min ${MIN_GAMES} games)`,
-    winners: boomBustWinners,
-    value: `${highestVariance} variance`,
-    noWinner: boomBustWinners.length === 0,
-  };
-
-  // Mr Consistent
-  const consistentSorted = [...eligibleStats]
-    .filter((s) => varianceByPlayer.has(s.player.id))
-    .sort(
-      (a, b) =>
-        (varianceByPlayer.get(a.player.id) ?? 0) -
-        (varianceByPlayer.get(b.player.id) ?? 0),
-    );
-  const lowestVariance = consistentSorted[0]
-    ? varianceByPlayer.get(consistentSorted[0].player.id)
-    : undefined;
-  const consistentWinners = consistentSorted.filter(
-    (s) => varianceByPlayer.get(s.player.id) === lowestVariance,
-  );
-  const mrConsistent: Award = {
-    emoji: "📊",
-    title: "Mr Consistent",
-    description: `Most consistent performer (min ${MIN_GAMES} games)`,
-    winners: consistentWinners.map((s) => s.player.name),
-    value: lowestVariance !== undefined ? `${lowestVariance} variance` : "",
-    noWinner: consistentWinners.length === 0,
-  };
-
   // Unlucky Hero
   const unluckyHeroSorted = [...qualified]
     .filter((s) => s.games_played > 0)
@@ -413,7 +410,6 @@ export function calculateAwards(
     });
     ghostByPlayer.set(s.player.id, blankGames);
   });
-
   const mostBlankGames = Math.max(0, ...Array.from(ghostByPlayer.values()));
   const ghostWinners = qualified
     .filter(
@@ -431,26 +427,114 @@ export function calculateAwards(
     noWinner: true,
   };
 
+  // Hardman
+  const hardmanWinners = topN(eligibleStats, "tackles");
+  const hardman: Award = {
+    emoji: "💪",
+    title: "Hardman",
+    description: "Most tackles",
+    winners: hardmanWinners.map((s) => s.player.name),
+    value: `${hardmanWinners[0]?.tackles ?? 0} tackles`,
+    noWinner: !hardmanWinners[0] || hardmanWinners[0].tackles === 0,
+  };
+
+  // Sweeper
+  const sweeperWinners = topN(eligibleStats, "interceptions");
+  const sweeper: Award = {
+    emoji: "✋",
+    title: "Sweeper",
+    description: "Most interceptions",
+    winners: sweeperWinners.map((s) => s.player.name),
+    value: `${sweeperWinners[0]?.interceptions ?? 0} interceptions`,
+    noWinner: !sweeperWinners[0] || sweeperWinners[0].interceptions === 0,
+  };
+
+  // Enforcer
+  const enforcerWinners = topN(eligibleStats, "defensive_actions");
+  const enforcer: Award = {
+    emoji: "🛡️",
+    title: "Enforcer",
+    description: "Most tackles + interceptions combined",
+    winners: enforcerWinners.map((s) => s.player.name),
+    value: `${enforcerWinners[0]?.defensive_actions ?? 0} defensive actions`,
+    noWinner: !enforcerWinners[0] || enforcerWinners[0].defensive_actions === 0,
+  };
+
+  // Tackle Hero
+  const tackleHeroResult = bestSingleGameStat(
+    "tackle",
+    eligibleStats,
+    events,
+    players,
+  );
+  const tackleHero: Award = {
+    emoji: "🦵",
+    title: "Tackle Hero",
+    description: "Most tackles in a single game",
+    winners: tackleHeroResult.winners,
+    value: `${tackleHeroResult.best} tackles in one game`,
+    noWinner: tackleHeroResult.winners.length === 0,
+  };
+
+  // Interception Hero
+  const interceptionHeroResult = bestSingleGameStat(
+    "interception",
+    eligibleStats,
+    events,
+    players,
+  );
+  const interceptionHero: Award = {
+    emoji: "🕵️",
+    title: "Interception Hero",
+    description: "Most interceptions in a single game",
+    winners: interceptionHeroResult.winners,
+    value: `${interceptionHeroResult.best} interceptions in one game`,
+    noWinner: interceptionHeroResult.winners.length === 0,
+  };
+
+  // Terminator
+  const tacklesPerGameWinners = topN(qualified, "tackles_per_game");
+  const tacklesPerGame: Award = {
+    emoji: "💪",
+    title: "Terminator",
+    description: "Best tackles per game rate",
+    winners: tacklesPerGameWinners.map((s) => s.player.name),
+    value: `${tacklesPerGameWinners[0]?.tackles_per_game ?? 0} per game`,
+    noWinner:
+      !tacklesPerGameWinners[0] ||
+      tacklesPerGameWinners[0].tackles_per_game === 0,
+  };
+
+  // The Interceptor
+  const interceptionsPerGameWinners = topN(qualified, "interceptions_per_game");
+  const interceptionsPerGame: Award = {
+    emoji: "✋",
+    title: "The Interceptor",
+    description: "Best interceptions per game rate",
+    winners: interceptionsPerGameWinners.map((s) => s.player.name),
+    value: `${interceptionsPerGameWinners[0]?.interceptions_per_game ?? 0} per game`,
+    noWinner:
+      !interceptionsPerGameWinners[0] ||
+      interceptionsPerGameWinners[0].interceptions_per_game === 0,
+  };
+
   // Best Partnership
   const partnerships = new Map<string, number>();
   games.forEach((game) => {
     const gameEvents = events.filter((e) => e.game_id === game.id);
     const goalEvents = gameEvents.filter((e) => e.event_type === "goal");
-
     goalEvents.forEach((goal) => {
       const assistEvent = gameEvents.find(
         (e) => e.event_type === "assist" && e.related_event_id === goal.id,
       );
       if (!assistEvent) return;
       if (assistEvent.player_id === goal.player_id) return;
-
       const scorerPlayer = players.find((p) => p.id === goal.player_id);
       const assisterPlayer = players.find(
         (p) => p.id === assistEvent.player_id,
       );
       if (!scorerPlayer || !assisterPlayer) return;
       if (scorerPlayer.is_guest || assisterPlayer.is_guest) return;
-
       const key = [goal.player_id, assistEvent.player_id].sort().join(":");
       partnerships.set(key, (partnerships.get(key) ?? 0) + 1);
     });
@@ -461,7 +545,6 @@ export function calculateAwards(
     const sortedPartnerships = Array.from(partnerships.entries()).sort(
       (a, b) => b[1] - a[1],
     );
-
     for (const [key, count] of sortedPartnerships) {
       const [id1, id2] = key.split(":");
       const p1Player =
@@ -470,7 +553,6 @@ export function calculateAwards(
       const p2Player =
         eligibleStats.find((s) => s.player.id === id2)?.player ??
         players.find((p) => p.id === id2);
-
       if (p1Player && p2Player && !p1Player.is_guest && !p2Player.is_guest) {
         bestPartnership = {
           emoji: "🤝",
@@ -484,143 +566,7 @@ export function calculateAwards(
     }
   }
 
-  // Hardman — most tackles
-  const hardmanWinners = topN(eligibleStats, "tackles");
-  const hardman: Award = {
-    emoji: "💪",
-    title: "Hardman",
-    description: "Most tackles",
-    winners: hardmanWinners.map((s) => s.player.name),
-    value: `${hardmanWinners[0]?.tackles ?? 0} tackles`,
-    noWinner: !hardmanWinners[0] || hardmanWinners[0].tackles === 0,
-  };
-
-  // Sweeper — most interceptions
-  const sweeperWinners = topN(eligibleStats, "interceptions");
-  const sweeper: Award = {
-    emoji: "✋",
-    title: "Sweeper",
-    description: "Most interceptions",
-    winners: sweeperWinners.map((s) => s.player.name),
-    value: `${sweeperWinners[0]?.interceptions ?? 0} interceptions`,
-    noWinner: !sweeperWinners[0] || sweeperWinners[0].interceptions === 0,
-  };
-
-  // Enforcer — most defensive actions
-  const enforcerWinners = topN(eligibleStats, "defensive_actions");
-  const enforcer: Award = {
-    emoji: "🛡️",
-    title: "Enforcer",
-    description: "Most tackles + interceptions combined",
-    winners: enforcerWinners.map((s) => s.player.name),
-    value: `${enforcerWinners[0]?.defensive_actions ?? 0} defensive actions`,
-    noWinner: !enforcerWinners[0] || enforcerWinners[0].defensive_actions === 0,
-  };
-
-  // Best single game tackles
-  const bestTackleGameByPlayer = new Map<string, number>();
-  events.forEach((e) => {
-    if (e.event_type !== "tackle") return;
-    const player = players.find((p) => p.id === e.player_id);
-    if (!player || player.is_guest) return;
-    const key = `${e.player_id}:${e.game_id}`;
-    bestTackleGameByPlayer.set(key, (bestTackleGameByPlayer.get(key) ?? 0) + 1);
-  });
-
-  const bestSingleTackleGame = new Map<string, number>();
-  bestTackleGameByPlayer.forEach((count, key) => {
-    const playerId = key.split(":")[0];
-    const current = bestSingleTackleGame.get(playerId) ?? 0;
-    if (count > current) bestSingleTackleGame.set(playerId, count);
-  });
-
-  const bestSingleTackles = Math.max(
-    0,
-    ...Array.from(bestSingleTackleGame.entries())
-      .filter(([playerId]) => !players.find((p) => p.id === playerId)?.is_guest)
-      .map(([, count]) => count),
-  );
-  const tackleHeroWinners = eligibleStats
-    .filter(
-      (s) =>
-        (bestSingleTackleGame.get(s.player.id) ?? 0) === bestSingleTackles &&
-        bestSingleTackles > 0,
-    )
-    .map((s) => s.player.name);
-  const tackleHero: Award = {
-    emoji: "🦵",
-    title: "Tackle Hero",
-    description: "Most tackles in a single game",
-    winners: tackleHeroWinners,
-    value: `${bestSingleTackles} tackles in one game`,
-    noWinner: tackleHeroWinners.length === 0,
-  };
-
-  // Best single game interceptions
-  const bestIntGameByPlayer = new Map<string, number>();
-  events.forEach((e) => {
-    if (e.event_type !== "interception") return;
-    const player = players.find((p) => p.id === e.player_id);
-    if (!player || player.is_guest) return;
-    const key = `${e.player_id}:${e.game_id}`;
-    bestIntGameByPlayer.set(key, (bestIntGameByPlayer.get(key) ?? 0) + 1);
-  });
-
-  const bestSingleIntGame = new Map<string, number>();
-  bestIntGameByPlayer.forEach((count, key) => {
-    const playerId = key.split(":")[0];
-    const current = bestSingleIntGame.get(playerId) ?? 0;
-    if (count > current) bestSingleIntGame.set(playerId, count);
-  });
-
-  const bestSingleInt = Math.max(
-    0,
-    ...Array.from(bestSingleIntGame.entries())
-      .filter(([playerId]) => !players.find((p) => p.id === playerId)?.is_guest)
-      .map(([, count]) => count),
-  );
-  const intHeroWinners = eligibleStats
-    .filter(
-      (s) =>
-        (bestSingleIntGame.get(s.player.id) ?? 0) === bestSingleInt &&
-        bestSingleInt > 0,
-    )
-    .map((s) => s.player.name);
-  const interceptionHero: Award = {
-    emoji: "🕵️",
-    title: "Interception Hero",
-    description: "Most interceptions in a single game",
-    winners: intHeroWinners,
-    value: `${bestSingleInt} interceptions in one game`,
-    noWinner: intHeroWinners.length === 0,
-  };
-
-  // Best tackles per game rate
-  const tacklesPerGameWinners = topN(qualified, "tackles_per_game");
-  const tacklesPerGame: Award = {
-    emoji: "💪",
-    title: "Terminator",
-    description: "Best tackles per game rate",
-    winners: tacklesPerGameWinners.map((s) => s.player.name),
-    value: `${tacklesPerGameWinners[0]?.tackles_per_game ?? 0} per game`,
-    noWinner:
-      !tacklesPerGameWinners[0] ||
-      tacklesPerGameWinners[0].tackles_per_game === 0,
-  };
-
-  // Best interceptions per game rate
-  const interceptionsPerGameWinners = topN(qualified, "interceptions_per_game");
-  const interceptionsPerGame: Award = {
-    emoji: "✋",
-    title: "The Interceptor",
-    description: "Best interceptions per game rate",
-    winners: interceptionsPerGameWinners.map((s) => s.player.name),
-    value: `${interceptionsPerGameWinners[0]?.interceptions_per_game ?? 0} per game`,
-    noWinner:
-      !interceptionsPerGameWinners[0] ||
-      interceptionsPerGameWinners[0].interceptions_per_game === 0,
-  };
-
+  // Hardcoded
   const celebrated: Award = {
     emoji: "🎉",
     title: "Not Too Cool 4 Skool",
@@ -641,75 +587,36 @@ export function calculateAwards(
     noWinner: false,
   };
 
-  // Goal Machine — most goals in a single game
-  const bestSingleGameGoals = new Map<string, number>();
-  events.forEach((e) => {
-    if (e.event_type !== "goal") return;
-    const player = players.find((p) => p.id === e.player_id);
-    if (!player || player.is_guest) return;
-    const key = `${e.player_id}:${e.game_id}`;
-    bestSingleGameGoals.set(key, (bestSingleGameGoals.get(key) ?? 0) + 1);
-  });
-
-  const bestSingleGameMap = new Map<string, number>();
-  bestSingleGameGoals.forEach((count, key) => {
-    const playerId = key.split(":")[0];
-    const current = bestSingleGameMap.get(playerId) ?? 0;
-    if (count > current) bestSingleGameMap.set(playerId, count);
-  });
-
-  const topSingleGameScore = Math.max(
-    0,
-    ...Array.from(bestSingleGameMap.values()),
-  );
-  const goalMachineWinners = eligibleStats
-    .filter(
-      (s) =>
-        (bestSingleGameMap.get(s.player.id) ?? 0) === topSingleGameScore &&
-        topSingleGameScore > 0,
-    )
-    .map((s) => s.player.name);
-
-  const goalMachine: Award = {
-    emoji: "💥",
-    title: "Goal Machine",
-    description: "Most goals in a single game",
-    winners: goalMachineWinners,
-    value: `${topSingleGameScore} goals in one game`,
-    noWinner: goalMachineWinners.length === 0,
-  };
-
   return {
     awards: [
       topScorer,
       goalMachine,
       playmaker,
+      assistHero,
       mostInvolved,
-      hatTrickHero,
+      oneGameWonder,
       chanceCreator,
+      keyPassHero,
+      hatTrickHero,
       clinical,
-      wasteful,
       triggerHappy,
+      nearlyMan,
       reliable,
       alwaysThere,
-      oneGameWonder,
       onFire,
       winner,
       unbeaten,
       unlucky,
       unluckyHero,
-      nearlyMan,
-      boomOrBust,
-      mrConsistent,
       ghost,
       hardman,
       sweeper,
       enforcer,
       tackleHero,
       interceptionHero,
-      celebrated,
       tacklesPerGame,
       interceptionsPerGame,
+      celebrated,
       hardestWorker,
     ],
     partnership: bestPartnership,
