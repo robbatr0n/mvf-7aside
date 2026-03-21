@@ -5,6 +5,7 @@ import { useEvents } from "../hooks/useEvents";
 import { useGames } from "../hooks/useGames";
 import { useGamePlayers } from "../hooks/useGamePlayers";
 import { useStats } from "../hooks/useStats";
+import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import { calculatePlayerGameBreakdown } from "../utils/stats";
 import { calculateAwards } from "../utils/awards";
 import VideoModal from "../components/shared/VideoModal";
@@ -35,6 +36,12 @@ export default function PlayerProfile() {
   const { games, loading: gamesLoading } = useGames();
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
+  const goalkeeperStats = useGoalkeeperStats(
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
   const [activeClip, setActiveClip] = useState<{
     src: string;
     label: string;
@@ -45,6 +52,7 @@ export default function PlayerProfile() {
 
   const player = players.find((p) => p.id === id);
   const playerStats = stats.find((s) => s.player.id === id);
+  const gkStats = goalkeeperStats.find((s) => s.player.id === id);
 
   const gameBreakdown = useMemo(() => {
     if (!id) return [];
@@ -100,11 +108,27 @@ export default function PlayerProfile() {
     );
   }
 
-  if (!player || !playerStats) {
+  if (!player) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center space-y-3">
           <p className="text-white text-lg font-semibold">Player not found</p>
+          <Link
+            to="/"
+            className="text-gray-500 hover:text-white text-sm transition-colors"
+          >
+            ← Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!playerStats && !gkStats) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <p className="text-white text-lg font-semibold">No stats yet</p>
           <Link
             to="/"
             className="text-gray-500 hover:text-white text-sm transition-colors"
@@ -131,8 +155,9 @@ export default function PlayerProfile() {
             <div>
               <h1 className="text-2xl font-bold text-white">{player.name}</h1>
               <p className="text-gray-500 text-sm mt-0.5">
-                {playerStats.games_played}{" "}
-                {playerStats.games_played === 1 ? "game" : "games"} played
+                {player.is_goalkeeper
+                  ? `${gkStats?.games ?? 0} ${(gkStats?.games ?? 0) === 1 ? "game" : "games"} played`
+                  : `${playerStats?.games_played ?? 0} ${playerStats?.games_played === 1 ? "game" : "games"} played`}
               </p>
             </div>
             {myAwards.length > 0 && (
@@ -208,18 +233,9 @@ export default function PlayerProfile() {
                           })
                         }
                       >
-                        <div className="relative">
-                          <video
-                            src={event.clip_url!}
-                            className="w-full aspect-video object-cover"
-                            preload="metadata"
-                            playsInline
-                            muted
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center">
-                              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
-                            </div>
+                        <div className="w-full aspect-video bg-gray-800 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-black/60 border border-gray-600 flex items-center justify-center">
+                            <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
                           </div>
                         </div>
                         <p className="text-gray-500 text-xs px-2 py-1.5">
@@ -235,7 +251,6 @@ export default function PlayerProfile() {
                   })}
                 </div>
               </section>
-
               {activeClip && (
                 <VideoModal
                   src={activeClip.src}
@@ -247,302 +262,521 @@ export default function PlayerProfile() {
           );
         })()}
 
-        {/* Attacking */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-            Attacking
-          </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
-            <StatRow
-              label="Goals"
-              value={playerStats.goals}
-              highlight={playerStats.goals > 0}
-            />
-            <StatRow
-              label="Assists"
-              value={playerStats.assists}
-              highlight={playerStats.assists > 0}
-            />
-            <StatRow
-              label="Goal Involvements (G+A)"
-              value={playerStats.goal_involvements}
-            />
-            <StatRow label="Key Passes" value={playerStats.key_passes} />
-            <StatRow
-              label="Goals per Game"
-              value={playerStats.goals_per_game}
-            />
-            {playerStats.hat_tricks > 0 && (
-              <StatRow
-                label="Hat Tricks 🎩"
-                value={playerStats.hat_tricks}
-                highlight
-              />
-            )}
-            <StatRow
-              label="Current Scoring Streak"
-              value={
-                playerStats.current_scoring_streak > 0
-                  ? `${playerStats.current_scoring_streak} game${playerStats.current_scoring_streak > 1 ? "s" : ""} 🔥`
-                  : "—"
-              }
-              highlight={playerStats.current_scoring_streak >= 3}
-            />
-            <StatRow
-              label="Best Scoring Streak"
-              value={
-                playerStats.best_scoring_streak > 0
-                  ? `${playerStats.best_scoring_streak} game${playerStats.best_scoring_streak > 1 ? "s" : ""}`
-                  : "—"
-              }
-            />
-            {bestGame && bestGame.goal_involvements > 0 && (
-              <StatRow
-                label="Best Game"
-                value={`${bestGame.goal_involvements} G+A (${new Date(bestGame.game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})`}
-                highlight
-              />
-            )}
-          </div>
-        </section>
-
-        {/* Defending */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-            Defending
-          </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
-            <StatRow
-              label="Tackles"
-              value={playerStats.tackles}
-              highlight={playerStats.tackles > 0}
-            />
-            <StatRow
-              label="Interceptions"
-              value={playerStats.interceptions}
-              highlight={playerStats.interceptions > 0}
-            />
-            <StatRow
-              label="Defensive Actions"
-              value={playerStats.defensive_actions}
-            />
-            <StatRow
-              label="Tackles per Game"
-              value={
-                playerStats.games_played > 0
-                  ? playerStats.tackles_per_game
-                  : "—"
-              }
-            />
-            <StatRow
-              label="Interceptions per Game"
-              value={
-                playerStats.games_played > 0
-                  ? playerStats.interceptions_per_game
-                  : "—"
-              }
-            />
-          </div>
-        </section>
-
-        {/* Shooting */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-            Shooting
-          </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
-            <StatRow
-              label="Shots on Target"
-              value={playerStats.shots_on_target}
-            />
-            <StatRow
-              label="Shots off Target"
-              value={playerStats.shots_off_target}
-            />
-            <StatRow
-              label="Total Shots"
-              value={playerStats.shots_on_target + playerStats.shots_off_target}
-            />
-            <StatRow
-              label="Shot Accuracy"
-              value={
-                playerStats.shots_on_target + playerStats.shots_off_target > 0
-                  ? `${playerStats.shot_accuracy}%`
-                  : "—"
-              }
-            />
-            <StatRow
-              label="Shot Conversion"
-              value={
-                playerStats.shots_on_target + playerStats.shots_off_target > 0
-                  ? `${playerStats.shot_conversion}%`
-                  : "—"
-              }
-            />
-          </div>
-        </section>
-
-        {/* Results */}
-        <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-            Results
-          </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
-            <StatRow
-              label="Wins"
-              value={playerStats.wins}
-              highlight={playerStats.wins > 0}
-            />
-            <StatRow label="Losses" value={playerStats.losses} />
-            <StatRow label="Draws" value={playerStats.draws} />
-            <StatRow
-              label="Win Rate"
-              value={`${winRate}%`}
-              highlight={winRate >= 50}
-            />
-            {playerStats.form.length > 0 && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
-                <span className="text-gray-400 text-sm">Last 5 Form</span>
-                <div className="flex items-center gap-1">
-                  {playerStats.form.map((result, i) => (
-                    <span
-                      key={i}
-                      className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${
-                        result === "W"
-                          ? "bg-green-900/60 text-green-400"
-                          : result === "L"
-                            ? "bg-red-900/60 text-red-400"
-                            : "bg-gray-800 text-gray-400"
-                      }`}
-                    >
-                      {result}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Per game breakdown */}
-        {gameBreakdown.length > 0 && (
+        {/* Goalkeeper stats */}
+        {player.is_goalkeeper && gkStats ? (
           <section className="space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-              Game by Game
+              Goalkeeper Stats
             </h2>
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left px-5 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        G
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        A
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        G+A
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        SOT
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        KP
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        TKL
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        INT
-                      </th>
-                      <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
-                        Result
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gameBreakdown.map(
-                      ({
-                        game,
-                        goals,
-                        assists,
-                        key_passes,
-                        shots_on_target,
-                        goal_involvements,
-                        tackles,
-                        interceptions,
-                      }) => {
-                        const gp = gamePlayers.find(
-                          (g) => g.game_id === game.id && g.player_id === id,
-                        );
-                        const playerTeam = gp?.team;
-                        const result =
-                          game.winning_team === null
-                            ? "—"
-                            : game.winning_team === 0
-                              ? "D"
-                              : game.winning_team === playerTeam
-                                ? "W"
-                                : "L";
-                        const resultColor =
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+              <StatRow label="Games" value={gkStats.games} />
+              <StatRow
+                label="Saves"
+                value={gkStats.saves}
+                highlight={gkStats.saves > 0}
+              />
+              <StatRow label="Goals Conceded" value={gkStats.goalsConceded} />
+              <StatRow
+                label="Save Percentage"
+                value={gkStats.games > 0 ? `${gkStats.savePercentage}%` : "—"}
+                highlight={gkStats.savePercentage >= 50}
+              />
+              <StatRow
+                label="Clean Sheets"
+                value={gkStats.cleanSheets}
+                highlight={gkStats.cleanSheets > 0}
+              />
+              <StatRow
+                label="Goals Conceded per Game"
+                value={gkStats.games > 0 ? gkStats.goalsConcededPerGame : "—"}
+              />
+              <StatRow
+                label="Wins"
+                value={gkStats.wins}
+                highlight={gkStats.wins > 0}
+              />
+              <StatRow label="Losses" value={gkStats.losses} />
+              <StatRow label="Draws" value={gkStats.draws} />
+              {gkStats.form.length > 0 && (
+                <div className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
+                  <span className="text-gray-400 text-sm">Last 5 Form</span>
+                  <div className="flex items-center gap-1">
+                    {gkStats.form.map((result, i) => (
+                      <span
+                        key={i}
+                        className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${
                           result === "W"
-                            ? "text-green-400"
+                            ? "bg-green-900/60 text-green-400"
                             : result === "L"
-                              ? "text-red-400"
-                              : "text-gray-500";
-
-                        return (
-                          <tr
-                            key={game.id}
-                            className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors"
-                          >
-                            <td className="px-5 py-3.5 text-gray-300">
-                              {new Date(game.date).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-white font-semibold">
-                              {goals > 0 ? goals : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {assists > 0 ? assists : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {goal_involvements > 0 ? goal_involvements : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {shots_on_target > 0 ? shots_on_target : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {key_passes > 0 ? key_passes : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {tackles > 0 ? tackles : "—"}
-                            </td>
-                            <td className="text-center px-4 py-3.5 text-gray-300">
-                              {interceptions > 0 ? interceptions : "—"}
-                            </td>
-                            <td
-                              className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}
-                            >
-                              {result}
-                            </td>
-                          </tr>
-                        );
-                      },
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                              ? "bg-red-900/60 text-red-400"
+                              : "bg-gray-800 text-gray-400"
+                        }`}
+                      >
+                        {result}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            {/* GK Game by Game */}
+            {gameBreakdown.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                  Game by Game
+                </h2>
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800">
+                          <th className="text-left px-5 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            SV
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            GC
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            SV%
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            CS
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            Result
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {games
+                          .filter((g) =>
+                            gamePlayers.some(
+                              (gp) =>
+                                gp.game_id === g.id && gp.player_id === id,
+                            ),
+                          )
+                          .sort(
+                            (a, b) =>
+                              new Date(b.date).getTime() -
+                              new Date(a.date).getTime(),
+                          )
+                          .map((game) => {
+                            const keeperEntry = gamePlayers.find(
+                              (gp) =>
+                                gp.game_id === game.id && gp.player_id === id,
+                            );
+                            const keeperTeam = keeperEntry?.team;
+                            const gameEvents = events.filter(
+                              (e) => e.game_id === game.id,
+                            );
+
+                            const opposingPlayerIds = new Set(
+                              gamePlayers
+                                .filter(
+                                  (gp) =>
+                                    gp.game_id === game.id &&
+                                    gp.team !== keeperTeam,
+                                )
+                                .map((gp) => gp.player_id),
+                            );
+
+                            const saves = gameEvents.filter(
+                              (e) =>
+                                e.event_type === "shot_on_target" &&
+                                e.related_event_id === null &&
+                                opposingPlayerIds.has(e.player_id),
+                            ).length;
+
+                            const goalsConceded = gameEvents.filter((e) => {
+                              if (e.event_type !== "goal") return false;
+                              if (e.team_override !== null)
+                                return e.team_override !== keeperTeam;
+                              return opposingPlayerIds.has(e.player_id);
+                            }).length;
+
+                            const totalShots = saves + goalsConceded;
+                            const svPct =
+                              totalShots > 0
+                                ? Math.round((saves / totalShots) * 100)
+                                : null;
+                            const cleanSheet = goalsConceded === 0;
+
+                            const result =
+                              game.winning_team === null
+                                ? "—"
+                                : game.winning_team === 0
+                                  ? "D"
+                                  : game.winning_team === keeperTeam
+                                    ? "W"
+                                    : "L";
+                            const resultColor =
+                              result === "W"
+                                ? "text-green-400"
+                                : result === "L"
+                                  ? "text-red-400"
+                                  : "text-gray-500";
+
+                            return (
+                              <tr
+                                key={game.id}
+                                className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors"
+                              >
+                                <td className="px-5 py-3.5 text-gray-300">
+                                  {new Date(game.date).toLocaleDateString(
+                                    "en-GB",
+                                    {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-white font-semibold">
+                                  {saves}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {goalsConceded}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {svPct !== null ? `${svPct}%` : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5">
+                                  {cleanSheet ? (
+                                    <span className="text-green-400 font-semibold">
+                                      ✓
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-600">—</span>
+                                  )}
+                                </td>
+                                <td
+                                  className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}
+                                >
+                                  {result}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
           </section>
-        )}
+        ) : playerStats ? (
+          <>
+            {/* Attacking */}
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Attacking
+              </h2>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+                <StatRow
+                  label="Goals"
+                  value={playerStats.goals}
+                  highlight={playerStats.goals > 0}
+                />
+                <StatRow
+                  label="Assists"
+                  value={playerStats.assists}
+                  highlight={playerStats.assists > 0}
+                />
+                <StatRow
+                  label="Goal Involvements (G+A)"
+                  value={playerStats.goal_involvements}
+                />
+                <StatRow label="Key Passes" value={playerStats.key_passes} />
+                <StatRow
+                  label="Goals per Game"
+                  value={playerStats.goals_per_game}
+                />
+                {playerStats.hat_tricks > 0 && (
+                  <StatRow
+                    label="Hat Tricks 🎩"
+                    value={playerStats.hat_tricks}
+                    highlight
+                  />
+                )}
+                <StatRow
+                  label="Current Scoring Streak"
+                  value={
+                    playerStats.current_scoring_streak > 0
+                      ? `${playerStats.current_scoring_streak} game${playerStats.current_scoring_streak > 1 ? "s" : ""} 🔥`
+                      : "—"
+                  }
+                  highlight={playerStats.current_scoring_streak >= 3}
+                />
+                <StatRow
+                  label="Best Scoring Streak"
+                  value={
+                    playerStats.best_scoring_streak > 0
+                      ? `${playerStats.best_scoring_streak} game${playerStats.best_scoring_streak > 1 ? "s" : ""}`
+                      : "—"
+                  }
+                />
+                {bestGame && bestGame.goal_involvements > 0 && (
+                  <StatRow
+                    label="Best Game"
+                    value={`${bestGame.goal_involvements} G+A (${new Date(bestGame.game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})`}
+                    highlight
+                  />
+                )}
+              </div>
+            </section>
+
+            {/* Defending */}
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Defending
+              </h2>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+                <StatRow
+                  label="Tackles"
+                  value={playerStats.tackles}
+                  highlight={playerStats.tackles > 0}
+                />
+                <StatRow
+                  label="Interceptions"
+                  value={playerStats.interceptions}
+                  highlight={playerStats.interceptions > 0}
+                />
+                <StatRow
+                  label="Defensive Actions"
+                  value={playerStats.defensive_actions}
+                />
+                <StatRow
+                  label="Tackles per Game"
+                  value={
+                    playerStats.games_played > 0
+                      ? playerStats.tackles_per_game
+                      : "—"
+                  }
+                />
+                <StatRow
+                  label="Interceptions per Game"
+                  value={
+                    playerStats.games_played > 0
+                      ? playerStats.interceptions_per_game
+                      : "—"
+                  }
+                />
+              </div>
+            </section>
+
+            {/* Shooting */}
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Shooting
+              </h2>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+                <StatRow
+                  label="Shots on Target"
+                  value={playerStats.shots_on_target}
+                />
+                <StatRow
+                  label="Shots off Target"
+                  value={playerStats.shots_off_target}
+                />
+                <StatRow
+                  label="Total Shots"
+                  value={
+                    playerStats.shots_on_target + playerStats.shots_off_target
+                  }
+                />
+                <StatRow
+                  label="Shot Accuracy"
+                  value={
+                    playerStats.shots_on_target + playerStats.shots_off_target >
+                    0
+                      ? `${playerStats.shot_accuracy}%`
+                      : "—"
+                  }
+                />
+                <StatRow
+                  label="Shot Conversion"
+                  value={
+                    playerStats.shots_on_target + playerStats.shots_off_target >
+                    0
+                      ? `${playerStats.shot_conversion}%`
+                      : "—"
+                  }
+                />
+              </div>
+            </section>
+
+            {/* Results */}
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Results
+              </h2>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+                <StatRow
+                  label="Wins"
+                  value={playerStats.wins}
+                  highlight={playerStats.wins > 0}
+                />
+                <StatRow label="Losses" value={playerStats.losses} />
+                <StatRow label="Draws" value={playerStats.draws} />
+                <StatRow
+                  label="Win Rate"
+                  value={`${winRate}%`}
+                  highlight={winRate >= 50}
+                />
+                {playerStats.form.length > 0 && (
+                  <div className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
+                    <span className="text-gray-400 text-sm">Last 5 Form</span>
+                    <div className="flex items-center gap-1">
+                      {playerStats.form.map((result, i) => (
+                        <span
+                          key={i}
+                          className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${
+                            result === "W"
+                              ? "bg-green-900/60 text-green-400"
+                              : result === "L"
+                                ? "bg-red-900/60 text-red-400"
+                                : "bg-gray-800 text-gray-400"
+                          }`}
+                        >
+                          {result}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Per game breakdown */}
+            {gameBreakdown.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                  Game by Game
+                </h2>
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800">
+                          <th className="text-left px-5 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            G
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            A
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            G+A
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            SOT
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            KP
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            TKL
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            INT
+                          </th>
+                          <th className="text-center px-4 py-3 text-gray-500 font-semibold text-xs uppercase tracking-wider">
+                            Result
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {gameBreakdown.map(
+                          ({
+                            game,
+                            goals,
+                            assists,
+                            key_passes,
+                            shots_on_target,
+                            goal_involvements,
+                            tackles,
+                            interceptions,
+                          }) => {
+                            const gp = gamePlayers.find(
+                              (g) =>
+                                g.game_id === game.id && g.player_id === id,
+                            );
+                            const playerTeam = gp?.team;
+                            const result =
+                              game.winning_team === null
+                                ? "—"
+                                : game.winning_team === 0
+                                  ? "D"
+                                  : game.winning_team === playerTeam
+                                    ? "W"
+                                    : "L";
+                            const resultColor =
+                              result === "W"
+                                ? "text-green-400"
+                                : result === "L"
+                                  ? "text-red-400"
+                                  : "text-gray-500";
+
+                            return (
+                              <tr
+                                key={game.id}
+                                className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors"
+                              >
+                                <td className="px-5 py-3.5 text-gray-300">
+                                  {new Date(game.date).toLocaleDateString(
+                                    "en-GB",
+                                    {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-white font-semibold">
+                                  {goals > 0 ? goals : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {assists > 0 ? assists : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {goal_involvements > 0
+                                    ? goal_involvements
+                                    : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {shots_on_target > 0 ? shots_on_target : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {key_passes > 0 ? key_passes : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {tackles > 0 ? tackles : "—"}
+                                </td>
+                                <td className="text-center px-4 py-3.5 text-gray-300">
+                                  {interceptions > 0 ? interceptions : "—"}
+                                </td>
+                                <td
+                                  className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}
+                                >
+                                  {result}
+                                </td>
+                              </tr>
+                            );
+                          },
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
+        ) : null}
       </div>
     </div>
   );
