@@ -1,4 +1,11 @@
-import type { Event, Game, GamePlayer, PlayerStats, Player } from "../types";
+import type {
+  Event,
+  Game,
+  GamePlayer,
+  PlayerStats,
+  Player,
+  GoalkeeperStats,
+} from "../types";
 import type { EventType } from "../types";
 
 export interface Award {
@@ -73,6 +80,7 @@ export function calculateAwards(
   games: Game[],
   gamePlayers: GamePlayer[],
   players: Player[],
+  goalkeeperStats: GoalkeeperStats[] = [],
 ): { awards: Award[]; partnership: PartnershipAward | null } {
   const eligibleStats = stats.filter((s) => !s.player.exclude_from_awards);
   const qualified = eligibleStats.filter((s) => s.games_played >= MIN_GAMES);
@@ -391,42 +399,6 @@ export function calculateAwards(
     noWinner: !unluckyHeroWinner,
   };
 
-  // Ghost
-  const ghostByPlayer = new Map<string, number>();
-  qualified.forEach((s) => {
-    let blankGames = 0;
-    games.forEach((game) => {
-      const played = gamePlayers.some(
-        (gp) => gp.player_id === s.player.id && gp.game_id === game.id,
-      );
-      if (!played) return;
-      const involvement = events.filter(
-        (e) =>
-          e.player_id === s.player.id &&
-          e.game_id === game.id &&
-          (e.event_type === "goal" || e.event_type === "assist"),
-      ).length;
-      if (involvement === 0) blankGames++;
-    });
-    ghostByPlayer.set(s.player.id, blankGames);
-  });
-  const mostBlankGames = Math.max(0, ...Array.from(ghostByPlayer.values()));
-  const ghostWinners = qualified
-    .filter(
-      (s) =>
-        (ghostByPlayer.get(s.player.id) ?? 0) === mostBlankGames &&
-        mostBlankGames > 0,
-    )
-    .map((s) => s.player.name);
-  const ghost: Award = {
-    emoji: "👻",
-    title: "Ghost",
-    description: `Most games with zero goals or assists (min ${MIN_GAMES} games)`,
-    winners: ghostWinners,
-    value: `${mostBlankGames} blank game${mostBlankGames !== 1 ? "s" : ""}`,
-    noWinner: true,
-  };
-
   // Hardman
   const hardmanWinners = topN(eligibleStats, "tackles");
   const hardman: Award = {
@@ -566,6 +538,88 @@ export function calculateAwards(
     }
   }
 
+  // The Wall — best save percentage
+  const wallWinners =
+    goalkeeperStats.length > 0
+      ? goalkeeperStats.filter(
+          (g) =>
+            g.savePercentage ===
+            Math.max(...goalkeeperStats.map((g) => g.savePercentage)),
+        )
+      : [];
+  const theWall: Award = {
+    emoji: "🧱",
+    title: "The Wall",
+    description: "Best save percentage",
+    winners: wallWinners.map((g) => g.player.name),
+    value: wallWinners[0] ? `${wallWinners[0].savePercentage}% saves` : "",
+    noWinner: wallWinners.length === 0,
+  };
+
+  // Stone Cold — most clean sheets
+  const cleanSheetWinners =
+    goalkeeperStats.length > 0
+      ? goalkeeperStats.filter(
+          (g) =>
+            g.cleanSheets ===
+              Math.max(...goalkeeperStats.map((g) => g.cleanSheets)) &&
+            g.cleanSheets > 0,
+        )
+      : [];
+  const stoneCold: Award = {
+    emoji: "🔒",
+    title: "Stone Cold",
+    description: "Most clean sheets",
+    winners: cleanSheetWinners.map((g) => g.player.name),
+    value: cleanSheetWinners[0]
+      ? `${cleanSheetWinners[0].cleanSheets} clean sheet${cleanSheetWinners[0].cleanSheets !== 1 ? "s" : ""}`
+      : "",
+    noWinner: cleanSheetWinners.length === 0,
+  };
+
+  // Superhero — most saves in a single game
+  const savesByGame = new Map<string, number>();
+  events.forEach((e) => {
+    if (e.event_type !== "shot_on_target" || e.related_event_id !== null)
+      return;
+    const keeper = goalkeeperStats.find((g) => {
+      const kEntry = gamePlayers.find(
+        (gp) => gp.game_id === e.game_id && gp.player_id === g.player.id,
+      );
+      if (!kEntry) return false;
+      const opposingIds = new Set(
+        gamePlayers
+          .filter((gp) => gp.game_id === e.game_id && gp.team !== kEntry.team)
+          .map((gp) => gp.player_id),
+      );
+      return opposingIds.has(e.player_id);
+    });
+    if (!keeper) return;
+    const key = `${keeper.player.id}:${e.game_id}`;
+    savesByGame.set(key, (savesByGame.get(key) ?? 0) + 1);
+  });
+
+  const bestSavesByPlayer = new Map<string, number>();
+  savesByGame.forEach((count, key) => {
+    const playerId = key.split(":")[0];
+    const current = bestSavesByPlayer.get(playerId) ?? 0;
+    if (count > current) bestSavesByPlayer.set(playerId, count);
+  });
+
+  const topSaves = Math.max(0, ...Array.from(bestSavesByPlayer.values()));
+  const superheroWinners = goalkeeperStats.filter(
+    (g) =>
+      (bestSavesByPlayer.get(g.player.id) ?? 0) === topSaves && topSaves > 0,
+  );
+  const superhero: Award = {
+    emoji: "🦸",
+    title: "Superhero",
+    description: "Most saves in a single game",
+    winners: superheroWinners.map((g) => g.player.name),
+    value: `${topSaves} saves in one game`,
+    noWinner: superheroWinners.length === 0,
+  };
+
   // Hardcoded
   const celebrated: Award = {
     emoji: "🎉",
@@ -608,7 +662,6 @@ export function calculateAwards(
       unbeaten,
       unlucky,
       unluckyHero,
-      ghost,
       hardman,
       sweeper,
       enforcer,
@@ -618,6 +671,9 @@ export function calculateAwards(
       interceptionsPerGame,
       celebrated,
       hardestWorker,
+      theWall,
+      stoneCold,
+      superhero,
     ],
     partnership: bestPartnership,
   };

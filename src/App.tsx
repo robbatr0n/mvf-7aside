@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Changelog from "./pages/ChangeLog";
 import ClipManager from "./pages/ClipManager";
 import PlayerGoals from "./pages/PlayerGoals";
+import Players from "./pages/Players";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/player/:id" element={<PlayerProfile />} />
           <Route path="/changelog" element={<Changelog />} />
           <Route path="/player/:id/goals" element={<PlayerGoals />} />
+          <Route path="/players" element={<Players />} />
         </Route>
 
         {/* Standalone pages without nav */}

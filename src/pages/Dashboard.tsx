@@ -33,8 +33,16 @@ export default function Dashboard() {
   );
 
   const { partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players),
-    [stats, events, games, gamePlayers, players],
+    () =>
+      calculateAwards(
+        stats,
+        events,
+        games,
+        gamePlayers,
+        players,
+        goalkeeperStats,
+      ),
+    [stats, events, games, gamePlayers, players, goalkeeperStats],
   );
 
   const loading =

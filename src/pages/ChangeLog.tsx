@@ -2,6 +2,18 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: "1.5.0",
+    date: "March 2026",
+    changes: [
+      "Added Players page — browse all players with search, tap any card to view their full profile",
+      "Added goalkeeper profile pages with dedicated stats and game by game breakdown",
+      "Added goalkeeper awards — The Wall, Stone Cold and Superhero",
+      "Player names now link to profiles throughout the app — leaderboard, award cards and game summaries",
+      "Leaderboard now shows top 8 by default with expand option",
+      "Added Last 3 games toggle to leaderboard for recent form view",
+    ],
+  },
+  {
     version: "1.4.0",
     date: "March 2026",
     changes: [

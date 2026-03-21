@@ -30,6 +30,7 @@ function FormBadge({ result }: { result: "W" | "L" | "D" }) {
 }
 
 const ATTACKING_HEADERS = [
+  { key: "games_played", label: "GP", tooltip: "Games Played" },
   { key: "goals", label: "G", tooltip: "Goals" },
   { key: "assists", label: "A", tooltip: "Assists" },
   { key: "goal_involvements", label: "G+A", tooltip: "Goals + Assists" },
@@ -39,7 +40,6 @@ const ATTACKING_HEADERS = [
   { key: "shot_conversion", label: "Conv%", tooltip: "Shot Conversion" },
   { key: "goals_per_game", label: "G/GM", tooltip: "Goals per Game" },
 ];
-
 const DEFENDING_HEADERS = [
   { key: "games_played", label: "GP", tooltip: "Games Played" },
   { key: "tackles", label: "TKL", tooltip: "Tackles" },
@@ -208,19 +208,20 @@ export default function Leaderboard({
                     <td className="px-5 py-3.5">
                       <Link
                         to={`/player/${s.player.id}`}
-                        className="text-gray-300 underline underline-offset-2 decoration-gray-600 font-medium hover:text-white transition-colors flex items-center gap-2"
+                        className="text-gray-300 hover:text-white transition-colors relative inline-block"
                       >
-                        {i === 0 && (
-                          <span className="text-yellow-500 text-xs">👑</span>
-                        )}
-                        {s.player.is_goalkeeper && (
-                          <span className="text-xs">🧤</span>
-                        )}
+                        <span className="absolute -top-1 -right-3 text-gray-600 text-xs">
+                          ↗
+                        </span>
+
                         {s.player.name}
                       </Link>
                     </td>
                     {tab === "attacking" ? (
                       <>
+                        <td className="text-center px-4 py-3.5 text-gray-300">
+                          {s.games_played}
+                        </td>
                         <td className="text-center px-4 py-3.5 text-white font-semibold">
                           {s.goals}
                         </td>

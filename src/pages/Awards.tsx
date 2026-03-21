@@ -6,6 +6,7 @@ import { useGamePlayers } from "../hooks/useGamePlayers";
 import { useStats } from "../hooks/useStats";
 import { calculateAwards } from "../utils/awards";
 import type { Award, PartnershipAward } from "../utils/awards";
+import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 
 function AwardCard({ award }: { award: Award }) {
   return (
@@ -87,6 +88,10 @@ const SECTIONS = [
     ],
   },
   {
+    title: "Goalkeepers",
+    titles: ["The Wall", "Stone Cold", "Superhero"],
+  },
+  {
     title: "Consistency",
     titles: ["Reliable", "Always There", "On Fire"],
   },
@@ -107,9 +112,26 @@ export default function Awards() {
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
 
+  // inside the component, after existing hooks:
+  const goalkeeperStats = useGoalkeeperStats(
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
+
+  // update the useMemo:
   const { awards, partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players),
-    [stats, events, games, gamePlayers, players],
+    () =>
+      calculateAwards(
+        stats,
+        events,
+        games,
+        gamePlayers,
+        players,
+        goalkeeperStats,
+      ),
+    [stats, events, games, gamePlayers, players, goalkeeperStats],
   );
 
   const loading =
@@ -152,7 +174,7 @@ export default function Awards() {
                     if (!award) return null;
                     return <AwardCard key={title} award={award} />;
                   })}
-                  {section.title === "Fun" && partnership && (
+                  {section.title === "Misc" && partnership && (
                     <PartnershipCard award={partnership} />
                   )}
                 </div>

@@ -70,8 +70,11 @@ export default function GoalkeeperLeaderboard({ stats }: Props) {
                   <td className="px-5 py-3.5">
                     <Link
                       to={`/player/${s.player.id}`}
-                      className="text-white font-medium hover:text-blue-400 transition-colors flex items-center gap-2"
+                      className="text-gray-300 hover:text-white transition-colors relative inline-block"
                     >
+                      <span className="absolute -top-1 -right-3 text-gray-600 text-xs">
+                        ↗
+                      </span>
                       {s.player.name}
                     </Link>
                   </td>
