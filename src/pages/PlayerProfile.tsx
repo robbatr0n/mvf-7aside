@@ -140,6 +140,10 @@ export default function PlayerProfile() {
     );
   }
 
+  const goalClips = events.filter(
+    (e) => e.player_id === id && e.event_type === "goal" && e.clip_url,
+  );
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
@@ -200,127 +204,151 @@ export default function PlayerProfile() {
         )}
 
         {/* Goals reel */}
-        {(() => {
-          const goalClips = events.filter(
-            (e) => e.player_id === id && e.event_type === "goal" && e.clip_url,
-          );
-          if (goalClips.length === 0) return null;
-          return (
-            <>
-              <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-                    Goals
-                  </h2>
+        {(eventsLoading || goalClips.length > 0) && (
+          <>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                  Goals
+                </h2>
+                {!eventsLoading && goalClips.length > 0 && (
                   <Link
                     to={`/player/${id}/goals`}
                     className="text-gray-500 hover:text-white text-xs transition-colors"
                   >
-                    View all →
+                    {goalClips.length > 3
+                      ? `View all ${goalClips.length} →`
+                      : "View all →"}
                   </Link>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-1">
-                  {goalClips.map((event, i) => {
-                    const game = games.find((g) => g.id === event.game_id);
-                    return (
+                )}
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {eventsLoading
+                  ? [...Array(3)].map((_, i) => (
                       <div
-                        key={event.id}
-                        className="flex-none w-36 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden cursor-pointer"
-                        onClick={() =>
-                          setActiveClip({
-                            src: event.clip_url!,
-                            label: `Goal ${i + 1}${game ? ` — ${new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}`,
-                          })
-                        }
+                        key={i}
+                        className="flex-none w-36 rounded-xl overflow-hidden animate-pulse"
                       >
-                        <div className="w-full aspect-video bg-gray-800 flex items-center justify-center">
-                          <div className="w-8 h-8 rounded-full bg-black/60 border border-gray-600 flex items-center justify-center">
-                            <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
-                          </div>
-                        </div>
-                        <p className="text-gray-500 text-xs px-2 py-1.5">
-                          {game
-                            ? new Date(game.date).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                              })
-                            : "—"}
-                        </p>
+                        <div className="w-full aspect-video bg-gray-800" />
+                        <div className="h-3 mx-2 my-2 bg-gray-800 rounded" />
                       </div>
-                    );
-                  })}
-                </div>
-              </section>
-              {activeClip && (
-                <VideoModal
-                  src={activeClip.src}
-                  label={activeClip.label}
-                  onClose={() => setActiveClip(null)}
-                />
-              )}
-            </>
-          );
-        })()}
+                    ))
+                  : goalClips.slice(0, 3).map((event, i) => {
+                      const game = games.find((g) => g.id === event.game_id);
+                      return (
+                        <div
+                          key={event.id}
+                          className="flex-none w-36 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden cursor-pointer"
+                          onClick={() =>
+                            setActiveClip({
+                              src: event.clip_url!,
+                              label: `Goal ${i + 1}${game ? ` — ${new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}`,
+                            })
+                          }
+                        >
+                          <div className="relative">
+                            <video
+                              src={event.clip_url!}
+                              className="w-full aspect-video object-cover"
+                              preload="metadata"
+                              playsInline
+                              muted
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-full bg-black/60 border border-gray-600 flex items-center justify-center">
+                                <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-gray-500 text-xs px-2 py-1.5">
+                            {game
+                              ? new Date(game.date).toLocaleDateString(
+                                  "en-GB",
+                                  { day: "numeric", month: "short" },
+                                )
+                              : "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+              </div>
+            </section>
+            {activeClip && (
+              <VideoModal
+                src={activeClip.src}
+                label={activeClip.label}
+                onClose={() => setActiveClip(null)}
+              />
+            )}
+          </>
+        )}
 
         {/* Goalkeeper stats */}
         {player.is_goalkeeper && gkStats ? (
-          <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-              Goalkeeper Stats
-            </h2>
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
-              <StatRow label="Games" value={gkStats.games} />
-              <StatRow
-                label="Saves"
-                value={gkStats.saves}
-                highlight={gkStats.saves > 0}
-              />
-              <StatRow label="Goals Conceded" value={gkStats.goalsConceded} />
-              <StatRow
-                label="Save Percentage"
-                value={gkStats.games > 0 ? `${gkStats.savePercentage}%` : "—"}
-                highlight={gkStats.savePercentage >= 50}
-              />
-              <StatRow
-                label="Clean Sheets"
-                value={gkStats.cleanSheets}
-                highlight={gkStats.cleanSheets > 0}
-              />
-              <StatRow
-                label="Goals Conceded per Game"
-                value={gkStats.games > 0 ? gkStats.goalsConcededPerGame : "—"}
-              />
-              <StatRow
-                label="Wins"
-                value={gkStats.wins}
-                highlight={gkStats.wins > 0}
-              />
-              <StatRow label="Losses" value={gkStats.losses} />
-              <StatRow label="Draws" value={gkStats.draws} />
-              {gkStats.form.length > 0 && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
-                  <span className="text-gray-400 text-sm">Last 5 Form</span>
-                  <div className="flex items-center gap-1">
-                    {gkStats.form.map((result, i) => (
-                      <span
-                        key={i}
-                        className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${
-                          result === "W"
-                            ? "bg-green-900/60 text-green-400"
-                            : result === "L"
-                              ? "bg-red-900/60 text-red-400"
-                              : "bg-gray-800 text-gray-400"
-                        }`}
-                      >
-                        {result}
-                      </span>
-                    ))}
+          <>
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                Goalkeeper Stats
+              </h2>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl px-5">
+                <StatRow label="Games" value={gkStats.games} />
+                <StatRow
+                  label="Saves"
+                  value={gkStats.saves}
+                  highlight={gkStats.saves > 0}
+                />
+                <StatRow label="Goals Conceded" value={gkStats.goalsConceded} />
+                <StatRow
+                  label="Save Percentage"
+                  value={gkStats.games > 0 ? `${gkStats.savePercentage}%` : "—"}
+                  highlight={gkStats.savePercentage >= 50}
+                />
+                <StatRow
+                  label="Clean Sheets"
+                  value={gkStats.cleanSheets}
+                  highlight={gkStats.cleanSheets > 0}
+                />
+                <StatRow
+                  label="Goals Conceded per Game"
+                  value={gkStats.games > 0 ? gkStats.goalsConcededPerGame : "—"}
+                />
+                <StatRow
+                  label="Wins"
+                  value={gkStats.wins}
+                  highlight={gkStats.wins > 0}
+                />
+                <StatRow label="Losses" value={gkStats.losses} />
+                <StatRow label="Draws" value={gkStats.draws} />
+                {gkStats.form.length > 0 && (
+                  <div className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
+                    <span className="text-gray-400 text-sm">Last 5 Form</span>
+                    <div className="flex items-center gap-1">
+                      {gkStats.form.map((result, i) => (
+                        <span
+                          key={i}
+                          className={`text-xs font-bold w-6 h-6 rounded flex items-center justify-center ${
+                            result === "W"
+                              ? "bg-green-900/60 text-green-400"
+                              : result === "L"
+                                ? "bg-red-900/60 text-red-400"
+                                : "bg-gray-800 text-gray-400"
+                          }`}
+                        >
+                          {result}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </section>
+
             {/* GK Game by Game */}
-            {gameBreakdown.length > 0 && (
+            {games.filter((g) =>
+              gamePlayers.some(
+                (gp) => gp.game_id === g.id && gp.player_id === id,
+              ),
+            ).length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
                   Game by Game
@@ -372,7 +400,6 @@ export default function PlayerProfile() {
                             const gameEvents = events.filter(
                               (e) => e.game_id === game.id,
                             );
-
                             const opposingPlayerIds = new Set(
                               gamePlayers
                                 .filter(
@@ -382,28 +409,24 @@ export default function PlayerProfile() {
                                 )
                                 .map((gp) => gp.player_id),
                             );
-
                             const saves = gameEvents.filter(
                               (e) =>
                                 e.event_type === "shot_on_target" &&
                                 e.related_event_id === null &&
                                 opposingPlayerIds.has(e.player_id),
                             ).length;
-
                             const goalsConceded = gameEvents.filter((e) => {
                               if (e.event_type !== "goal") return false;
                               if (e.team_override !== null)
                                 return e.team_override !== keeperTeam;
                               return opposingPlayerIds.has(e.player_id);
                             }).length;
-
                             const totalShots = saves + goalsConceded;
                             const svPct =
                               totalShots > 0
                                 ? Math.round((saves / totalShots) * 100)
                                 : null;
                             const cleanSheet = goalsConceded === 0;
-
                             const result =
                               game.winning_team === null
                                 ? "—"
@@ -466,7 +489,7 @@ export default function PlayerProfile() {
                 </div>
               </section>
             )}
-          </section>
+          </>
         ) : playerStats ? (
           <>
             {/* Attacking */}
