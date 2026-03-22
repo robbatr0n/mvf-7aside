@@ -13,6 +13,7 @@ import InfoBar from "../components/dashboard/InfoBar";
 import GoalkeeperLeaderboard from "../components/dashboard/GoalkeeperLeaderboard";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import TeamOfTheSeason from "../components/dashboard/TeamOfTheSeason";
+import { useTeamStats } from "../hooks/useTeamStats";
 
 export default function Dashboard() {
   const { players, loading: playersLoading } = usePlayers();
@@ -26,7 +27,14 @@ export default function Dashboard() {
     games,
     gamePlayers,
   );
-
+  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+    stats,
+    goalkeeperStats,
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
   const gameSummaries = useMemo(
     () => calculateGameSummaries(games, players, events, gamePlayers),
     [games, players, events, gamePlayers],
@@ -41,8 +49,17 @@ export default function Dashboard() {
         gamePlayers,
         players,
         goalkeeperStats,
+        totwAppearances,
       ),
-    [stats, events, games, gamePlayers, players, goalkeeperStats],
+    [
+      stats,
+      events,
+      games,
+      gamePlayers,
+      players,
+      goalkeeperStats,
+      totwAppearances,
+    ],
   );
 
   const loading =
@@ -70,9 +87,17 @@ export default function Dashboard() {
               events={events}
               games={games}
               gamePlayers={gamePlayers}
+              teamOfSeasonIds={teamOfSeasonIds}
             />
             <GoalkeeperLeaderboard stats={goalkeeperStats} />
-            <TeamOfTheSeason stats={stats} goalkeeperStats={goalkeeperStats} />
+            <TeamOfTheSeason
+              stats={stats}
+              goalkeeperStats={goalkeeperStats}
+              players={players}
+              events={events}
+              games={games}
+              gamePlayers={gamePlayers}
+            />
             <GameBreakdown summaries={gameSummaries} />
           </>
         )}

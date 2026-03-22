@@ -87,6 +87,17 @@ const STAT_GUIDE = [
     name: "Goals Conceded per Game",
     desc: "Average goals conceded per game played",
   },
+  { abbr: "──", name: "", desc: "" },
+  {
+    abbr: "TOTS",
+    name: "Best VII",
+    desc: "The best 7 players of the season based on a composite score: goals per game (×4), assists per game (×2.5), shots on target per game (×0.5), key passes per game (×0.5), tackles per game (×1), interceptions per game (×1), win rate (×2). The goalkeeper is picked separately by best save percentage.",
+  },
+  {
+    abbr: "TOTW",
+    name: "Team of the Week",
+    desc: "The best 7 players from a single game using the same scoring formula applied to that game only. Shown as 🏅 ×N on player profiles and cards.",
+  },
 ];
 
 interface Props {

@@ -16,14 +16,14 @@ interface AwardCardProps {
 
 function AwardCard({ emoji, title, name, value }: AwardCardProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3">
-      <span className="text-2xl">{emoji}</span>
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-2">
+      <span className="text-xl">{emoji}</span>
       <div>
         <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold">
           {title}
         </p>
-        <p className="text-white font-bold text-lg mt-1">{name}</p>
-        <p className="text-gray-500 text-sm">{value}</p>
+        <p className="text-white font-bold text-base mt-0.5">{name}</p>
+        <p className="text-gray-500 text-xs">{value}</p>
       </div>
     </div>
   );

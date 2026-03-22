@@ -7,6 +7,7 @@ import { useStats } from "../hooks/useStats";
 import { calculateAwards } from "../utils/awards";
 import type { Award, PartnershipAward } from "../utils/awards";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
+import { useTeamStats } from "../hooks/useTeamStats";
 
 function AwardCard({ award }: { award: Award }) {
   return (
@@ -93,7 +94,7 @@ const SECTIONS = [
   },
   {
     title: "Consistency",
-    titles: ["Reliable", "Always There", "On Fire"],
+    titles: ["Reliable", "Always There", "On Fire", "TOTW King"],
   },
   {
     title: "Results",
@@ -120,6 +121,15 @@ export default function Awards() {
     gamePlayers,
   );
 
+  const { totwAppearances } = useTeamStats(
+    stats,
+    goalkeeperStats,
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
+
   // update the useMemo:
   const { awards, partnership } = useMemo(
     () =>
@@ -130,8 +140,17 @@ export default function Awards() {
         gamePlayers,
         players,
         goalkeeperStats,
+        totwAppearances,
       ),
-    [stats, events, games, gamePlayers, players, goalkeeperStats],
+    [
+      stats,
+      events,
+      games,
+      gamePlayers,
+      players,
+      goalkeeperStats,
+      totwAppearances,
+    ],
   );
 
   const loading =

@@ -81,6 +81,7 @@ export function calculateAwards(
   gamePlayers: GamePlayer[],
   players: Player[],
   goalkeeperStats: GoalkeeperStats[] = [],
+  totwAppearances: Map<string, number> = new Map(),
 ): { awards: Award[]; partnership: PartnershipAward | null } {
   const eligibleStats = stats.filter((s) => !s.player.exclude_from_awards);
   const qualified = eligibleStats.filter((s) => s.games_played >= MIN_GAMES);
@@ -641,6 +642,25 @@ export function calculateAwards(
     noWinner: false,
   };
 
+  // Most TOTW appearances
+  const topTotwCount = Math.max(0, ...Array.from(totwAppearances.values()));
+  const totwKingWinners = eligibleStats
+    .filter(
+      (s) =>
+        (totwAppearances.get(s.player.id) ?? 0) === topTotwCount &&
+        topTotwCount > 0,
+    )
+    .map((s) => s.player.name);
+
+  const totwKing: Award = {
+    emoji: "🏅",
+    title: "TOTW King",
+    description: "Most Team of the Week appearances",
+    winners: totwKingWinners,
+    value: `${topTotwCount} appearance${topTotwCount !== 1 ? "s" : ""}`,
+    noWinner: totwKingWinners.length === 0,
+  };
+
   return {
     awards: [
       topScorer,
@@ -674,6 +694,7 @@ export function calculateAwards(
       theWall,
       stoneCold,
       superhero,
+      totwKing,
     ],
     partnership: bestPartnership,
   };

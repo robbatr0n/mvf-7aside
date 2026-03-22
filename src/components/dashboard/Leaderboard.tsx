@@ -10,6 +10,7 @@ interface Props {
   events: Event[];
   games: Game[];
   gamePlayers: GamePlayer[];
+  teamOfSeasonIds: Set<string>;
 }
 
 type Tab = "attacking" | "defending";
@@ -40,6 +41,7 @@ const ATTACKING_HEADERS = [
   { key: "shot_conversion", label: "Conv%", tooltip: "Shot Conversion" },
   { key: "goals_per_game", label: "G/GM", tooltip: "Goals per Game" },
 ];
+
 const DEFENDING_HEADERS = [
   { key: "games_played", label: "GP", tooltip: "Games Played" },
   { key: "tackles", label: "TKL", tooltip: "Tackles" },
@@ -87,10 +89,11 @@ export default function Leaderboard({
   events,
   games,
   gamePlayers,
+  teamOfSeasonIds,
 }: Props) {
   const [tab, setTab] = useState<Tab>("attacking");
   const [view, setView] = useState<"overall" | "last3">("overall");
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const last3Stats = useMemo(
     () => calculateLastNPlayerStats(players, events, games, gamePlayers, 3),
@@ -109,8 +112,6 @@ export default function Leaderboard({
         );
   }, [activeStats, tab]);
 
-  const currentKey = `${tab}-${view}`;
-  const showAll = expandedKey === currentKey;
   const displayStats = showAll ? sortedStats : sortedStats.slice(0, 8);
   const headers = tab === "attacking" ? ATTACKING_HEADERS : DEFENDING_HEADERS;
 
@@ -206,16 +207,21 @@ export default function Leaderboard({
                     }`}
                   >
                     <td className="px-5 py-3.5">
-                      <Link
-                        to={`/player/${s.player.id}`}
-                        className="text-gray-300 hover:text-white transition-colors relative inline-block"
-                      >
-                        <span className="absolute -top-1 -right-3 text-gray-600 text-xs">
-                          ↗
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-yellow-500 text-xs w-4 flex-shrink-0"
+                          title="Best VII"
+                        >
+                          {teamOfSeasonIds.has(s.player.id) ? "⭐" : ""}
                         </span>
-
-                        {s.player.name}
-                      </Link>
+                        <Link
+                          to={`/player/${s.player.id}`}
+                          className="text-gray-300 hover:text-white transition-colors inline-flex items-center gap-1"
+                        >
+                          {s.player.name}
+                          <span className="text-gray-600 text-xs">↗</span>
+                        </Link>
+                      </div>
                     </td>
                     {tab === "attacking" ? (
                       <>
@@ -294,7 +300,7 @@ export default function Leaderboard({
         {sortedStats.length > 8 && (
           <div className="px-5 py-3 text-center border-t border-gray-800">
             <button
-              onClick={() => setExpandedKey(showAll ? null : currentKey)}
+              onClick={() => setShowAll((prev) => !prev)}
               className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
             >
               {showAll

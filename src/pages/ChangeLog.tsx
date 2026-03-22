@@ -2,6 +2,15 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: "1.6.0",
+    date: "March 2026",
+    changes: [
+      "Added Team of the Week — best 7 players from each game using a composite score, viewable for any historical game via dropdown",
+      "Added TOTS and TOTW badges on player profiles, player cards and leaderboard",
+      "Added most TOTW appearances award",
+    ],
+  },
+  {
     version: "1.5.0",
     date: "March 2026",
     changes: [
@@ -10,7 +19,6 @@ const CHANGELOG = [
       "Added goalkeeper awards — The Wall, Stone Cold and Superhero",
       "Player names now link to profiles throughout the app — leaderboard, award cards and game summaries",
       "Leaderboard now shows top 8 by default with expand option",
-      "Added Last 3 games toggle to leaderboard for recent form view",
     ],
   },
   {
@@ -18,7 +26,7 @@ const CHANGELOG = [
     date: "March 2026",
     changes: [
       "Added goal video highlights — clips viewable on player profiles with a full goals archive page per player",
-      "Added Team of the Season — composite score across goals, assists, defensive actions and win rate displayed on a pitch graphic",
+      "Added Best VII — composite score across goals, assists, defensive actions and win rate displayed on a pitch graphic",
       "Added Goal Machine award — most goals in a single game",
       "Added Assist Hero award — most assists in a single game",
       "Added Key Pass Hero award — most key passes in a single game",

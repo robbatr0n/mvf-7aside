@@ -3,6 +3,11 @@ import { Link } from "react-router-dom";
 import { usePlayers } from "../hooks/usePlayers";
 import { useGamePlayers } from "../hooks/useGamePlayers";
 import { getAvatarColor } from "../utils/avatar";
+import { useEvents } from "../hooks/useEvents";
+import { useGames } from "../hooks/useGames";
+import { useStats } from "../hooks/useStats";
+import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
+import { useTeamStats } from "../hooks/useTeamStats";
 
 export default function Players() {
   const { players, loading: playersLoading } = usePlayers();
@@ -10,6 +15,25 @@ export default function Players() {
   const [search, setSearch] = useState("");
 
   const loading = playersLoading || gamePlayersLoading;
+  const { events } = useEvents();
+  const { games } = useGames();
+  const { stats } = useStats(players, events, games, gamePlayers);
+
+  const goalkeeperStats = useGoalkeeperStats(
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
+
+  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+    stats,
+    goalkeeperStats,
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
 
   const filteredPlayers = useMemo(() => {
     return players
@@ -68,19 +92,16 @@ export default function Players() {
                   to={`/player/${player.id}`}
                   className="relative bg-gray-900 border border-gray-800 hover:border-blue-600 rounded-2xl p-4 space-y-3 transition-all group"
                 >
-                  {/* Arrow */}
                   <span className="absolute top-3 right-3 text-gray-700 group-hover:text-blue-400 text-sm transition-colors">
                     →
                   </span>
 
-                  {/* Avatar */}
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${avatarColor}`}
                   >
                     {initials}
                   </div>
 
-                  {/* Info */}
                   <div>
                     <p className="text-white font-semibold text-sm pr-4 group-hover:text-blue-400 transition-colors">
                       {player.is_goalkeeper && <span className="mr-1">🧤</span>}
@@ -89,6 +110,18 @@ export default function Players() {
                     <p className="text-gray-500 text-xs mt-0.5">
                       {gamesPlayed} {gamesPlayed === 1 ? "game" : "games"}
                     </p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {teamOfSeasonIds.has(player.id) && (
+                        <span className="inline-flex items-center gap-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                          ⭐ TOTS
+                        </span>
+                      )}
+                      {(totwAppearances.get(player.id) ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 bg-gray-800 border border-gray-700 text-gray-300 text-xs font-medium px-2 py-0.5 rounded-full">
+                          🏅 ×{totwAppearances.get(player.id)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </Link>
               );

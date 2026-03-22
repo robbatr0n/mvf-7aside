@@ -9,6 +9,7 @@ import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import { calculatePlayerGameBreakdown } from "../utils/stats";
 import { calculateAwards } from "../utils/awards";
 import VideoModal from "../components/shared/VideoModal";
+import { useTeamStats } from "../hooks/useTeamStats";
 
 interface StatRowProps {
   label: string;
@@ -53,6 +54,18 @@ export default function PlayerProfile() {
   const player = players.find((p) => p.id === id);
   const playerStats = stats.find((s) => s.player.id === id);
   const gkStats = goalkeeperStats.find((s) => s.player.id === id);
+
+  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+    stats,
+    goalkeeperStats,
+    players,
+    events,
+    games,
+    gamePlayers,
+  );
+
+  const isInTots = id ? teamOfSeasonIds.has(id) : false;
+  const totwCount = id ? (totwAppearances.get(id) ?? 0) : 0;
 
   const gameBreakdown = useMemo(() => {
     if (!id) return [];
@@ -163,6 +176,18 @@ export default function PlayerProfile() {
                   ? `${gkStats?.games ?? 0} ${(gkStats?.games ?? 0) === 1 ? "game" : "games"} played`
                   : `${playerStats?.games_played ?? 0} ${playerStats?.games_played === 1 ? "game" : "games"} played`}
               </p>
+              <div className="flex items-center gap-2 mt-2">
+                {isInTots && (
+                  <span className="inline-flex items-center gap-1 bg-yellow-900/40 border border-yellow-700/50 text-yellow-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                    ⭐ Best VII
+                  </span>
+                )}
+                {totwCount > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-gray-800 border border-gray-700 text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">
+                    🏅 ×{totwCount} TOTW
+                  </span>
+                )}
+              </div>
             </div>
             {myAwards.length > 0 && (
               <div className="flex gap-1 flex-wrap justify-end max-w-xs">

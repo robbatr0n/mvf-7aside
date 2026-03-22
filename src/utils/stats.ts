@@ -581,3 +581,113 @@ export function calculateTeamOfTheSeason(
     outfield: scored.slice(0, 6),
   };
 }
+
+export function calculateTeamOfTheWeek(
+  gameId: string,
+  players: Player[],
+  events: Event[],
+  gamePlayers: GamePlayer[],
+): TeamOfTheSeason {
+  const gameEvents = events.filter((e) => e.game_id === gameId);
+  const gamePlayerEntries = gamePlayers.filter((gp) => gp.game_id === gameId);
+
+  const outfieldEntries = gamePlayerEntries.filter((gp) => {
+    const player = players.find((p) => p.id === gp.player_id);
+    return player && !player.is_guest && !player.is_goalkeeper;
+  });
+
+  const scored = outfieldEntries
+    .map((gp) => {
+      const player = players.find((p) => p.id === gp.player_id)!;
+      const playerEvents = gameEvents.filter(
+        (e) => e.player_id === gp.player_id,
+      );
+
+      const goals = playerEvents.filter((e) => e.event_type === "goal").length;
+      const assists = playerEvents.filter(
+        (e) => e.event_type === "assist",
+      ).length;
+      const sot = playerEvents.filter(
+        (e) => e.event_type === "shot_on_target",
+      ).length;
+      const kp = playerEvents.filter((e) => e.event_type === "key_pass").length;
+      const tackles = playerEvents.filter(
+        (e) => e.event_type === "tackle",
+      ).length;
+      const interceptions = playerEvents.filter(
+        (e) => e.event_type === "interception",
+      ).length;
+
+      const score =
+        goals * 4 +
+        assists * 2.5 +
+        sot * 0.5 +
+        kp * 0.5 +
+        tackles * 1 +
+        interceptions * 1;
+
+      return {
+        player,
+        score: Math.round(score * 100) / 100,
+        role: "outfield" as const,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  // Best keeper who played this game
+  const keeperEntry = gamePlayerEntries.find((gp) => {
+    const player = players.find((p) => p.id === gp.player_id);
+    return player?.is_goalkeeper;
+  });
+
+  const goalkeeper = keeperEntry
+    ? (() => {
+        const player = players.find((p) => p.id === keeperEntry.player_id)!;
+        return { player, score: 0, role: "goalkeeper" as const };
+      })()
+    : null;
+
+  return {
+    goalkeeper,
+    outfield: scored.slice(0, 6),
+  };
+}
+
+export function getTeamOfSeasonPlayerIds(
+  stats: PlayerStats[],
+  goalkeeperStats: GoalkeeperStats[],
+): Set<string> {
+  const team = calculateTeamOfTheSeason(stats, goalkeeperStats);
+  const ids = new Set<string>();
+  team.outfield.forEach((p) => ids.add(p.player.id));
+  if (team.goalkeeper) ids.add(team.goalkeeper.player.id);
+  return ids;
+}
+
+export function calculateTotwAppearances(
+  players: Player[],
+  events: Event[],
+  games: Game[],
+  gamePlayers: GamePlayer[],
+): Map<string, number> {
+  const appearances = new Map<string, number>();
+
+  const sortedGames = [...games].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+
+  sortedGames.forEach((game) => {
+    const team = calculateTeamOfTheWeek(game.id, players, events, gamePlayers);
+    team.outfield.forEach((p) => {
+      appearances.set(p.player.id, (appearances.get(p.player.id) ?? 0) + 1);
+    });
+    if (team.goalkeeper) {
+      appearances.set(
+        team.goalkeeper.player.id,
+        (appearances.get(team.goalkeeper.player.id) ?? 0) + 1,
+      );
+    }
+  });
+
+  return appearances;
+}
