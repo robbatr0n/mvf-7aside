@@ -13,7 +13,7 @@ export default function Nav() {
   };
 
   return (
-    <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-30">
+    <nav className="bg-black border-b-2 border-mvf sticky top-0 z-30">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <img src="/logo.png" alt="MVF" className="w-8 h-8 object-contain" />
@@ -29,7 +29,7 @@ export default function Nav() {
               to={item.path}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive(item.path)
-                  ? "bg-gray-800 text-white"
+                  ? "bg-mvf text-white"
                   : "text-gray-500 hover:text-white hover:bg-gray-800/50"
               }`}
             >

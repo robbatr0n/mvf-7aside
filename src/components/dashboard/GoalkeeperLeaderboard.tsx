@@ -3,6 +3,7 @@ import type { GoalkeeperStats } from "../../types";
 
 interface Props {
   stats: GoalkeeperStats[];
+  teamOfSeasonIds: Set<string>;
 }
 
 function FormBadge({ result }: { result: "W" | "L" | "D" }) {
@@ -20,7 +21,10 @@ function FormBadge({ result }: { result: "W" | "L" | "D" }) {
   );
 }
 
-export default function GoalkeeperLeaderboard({ stats }: Props) {
+export default function GoalkeeperLeaderboard({
+  stats,
+  teamOfSeasonIds,
+}: Props) {
   if (stats.length === 0) return null;
 
   return (
@@ -68,15 +72,21 @@ export default function GoalkeeperLeaderboard({ stats }: Props) {
                   }`}
                 >
                   <td className="px-5 py-3.5">
-                    <Link
-                      to={`/player/${s.player.id}`}
-                      className="text-gray-300 hover:text-white transition-colors relative inline-block"
-                    >
-                      <span className="absolute -top-1 -right-3 text-gray-600 text-xs">
-                        ↗
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-yellow-500 text-xs w-4 flex-shrink-0"
+                        title="Team of the Season"
+                      >
+                        {teamOfSeasonIds.has(s.player.id) ? "⭐" : ""}
                       </span>
-                      {s.player.name}
-                    </Link>
+                      <Link
+                        to={`/player/${s.player.id}`}
+                        className="text-gray-300 hover:text-white transition-colors inline-flex items-center gap-1"
+                      >
+                        {s.player.name}
+                        <span className="text-gray-600 text-xs">↗</span>
+                      </Link>
+                    </div>
                   </td>
                   <td className="text-center px-4 py-3.5 text-gray-300">
                     {s.games}

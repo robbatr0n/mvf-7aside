@@ -89,7 +89,10 @@ export default function Dashboard() {
               gamePlayers={gamePlayers}
               teamOfSeasonIds={teamOfSeasonIds}
             />
-            <GoalkeeperLeaderboard stats={goalkeeperStats} />
+            <GoalkeeperLeaderboard
+              stats={goalkeeperStats}
+              teamOfSeasonIds={teamOfSeasonIds}
+            />
             <TeamOfTheSeason
               stats={stats}
               goalkeeperStats={goalkeeperStats}
