@@ -16,7 +16,7 @@ export default function Nav() {
     <nav className="border-b border-gray-800 bg-gray-950 sticky top-0 z-30">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <span className="text-xl">⚽</span>
+          <img src="/logo.png" alt="MVF" className="w-8 h-8 object-contain" />
           <span className="font-bold text-white tracking-tight text-sm">
             <span className="sm:hidden">MVF</span>
             <span className="hidden sm:inline">MVF Wednesday</span>
