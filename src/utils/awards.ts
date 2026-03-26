@@ -661,6 +661,21 @@ export function calculateAwards(
     noWinner: totwKingWinners.length === 0,
   };
 
+  const grassCutterResult = bestSingleGameStat(
+    "shot_off_target",
+    eligibleStats,
+    events,
+    players,
+  );
+  const grassCutter: Award = {
+    emoji: "🏌️‍♀️",
+    title: "Swing and a Miss",
+    description: "Most shots off target in a single game",
+    winners: grassCutterResult.winners,
+    value: `${grassCutterResult.best} shots off target in one game`,
+    noWinner: grassCutterResult.winners.length === 0,
+  };
+
   return {
     awards: [
       topScorer,
@@ -668,6 +683,7 @@ export function calculateAwards(
       playmaker,
       assistHero,
       mostInvolved,
+      grassCutter,
       oneGameWonder,
       chanceCreator,
       keyPassHero,

@@ -74,7 +74,7 @@ const SECTIONS = [
   },
   {
     title: "Shooting",
-    titles: ["Clinical", "Trigger Happy", "Nearly Man"],
+    titles: ["Clinical", "Trigger Happy", "Nearly Man", "Swing and a Miss"],
   },
   {
     title: "Defending",
