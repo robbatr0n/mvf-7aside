@@ -137,29 +137,6 @@ function TeamStatsPanel({
   );
 }
 
-function InProgressPlaceholder({ date }: { date: string }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 border-t-2 border-t-mvf rounded-2xl p-6 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-white font-semibold text-sm">
-          {new Date(date).toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </p>
-        <span className="inline-flex items-center gap-1.5 bg-mvf/10 border border-mvf/30 text-mvf text-xs font-medium px-2.5 py-1 rounded-full">
-          ⏱ In Progress
-        </span>
-      </div>
-      <p className="text-gray-500 text-sm">
-        This game is currently being tagged — check back soon for the full breakdown.
-      </p>
-    </div>
-  );
-}
-
 export default function GameBreakdown({ summaries }: Props) {
   const [index, setIndex] = useState(0);
 
@@ -274,8 +251,8 @@ export default function GameBreakdown({ summaries }: Props) {
                   key={i}
                   onClick={() => setIndex(reversedIndex)}
                   className={`rounded-full transition-all ${reversedIndex === index
-                      ? "bg-mvf w-4 h-1.5"
-                      : "bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5"
+                    ? "bg-mvf w-4 h-1.5"
+                    : "bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5"
                     }`}
                 />
               );
