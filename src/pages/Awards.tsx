@@ -12,9 +12,8 @@ import { useTeamStats } from "../hooks/useTeamStats";
 function AwardCard({ award }: { award: Award }) {
   return (
     <div
-      className={`bg-gray-900 border rounded-2xl p-6 space-y-3 flex flex-col ${
-        award.noWinner ? "border-gray-800 opacity-50" : "border-gray-800"
-      }`}
+      className={`bg-gray-900 border rounded-2xl p-6 space-y-3 flex flex-col ${award.noWinner ? "border-gray-800 opacity-50" : "border-gray-800"
+        }`}
     >
       <span className="text-3xl">{award.emoji}</span>
       <div>
@@ -54,57 +53,11 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
 }
 
 const SECTIONS = [
-  {
-    title: "📌 Pinned",
-    titles: ["Hardest Worker"],
-  },
-  {
-    title: "Attacking",
-    titles: [
-      "Top Scorer",
-      "Goal Machine",
-      "Playmaker",
-      "Assist Hero",
-      "Most Involved",
-      "One Game Wonder",
-      "Chance Creator",
-      "Key Pass Hero",
-      "Hat Trick Hero",
-    ],
-  },
-  {
-    title: "Shooting",
-    titles: ["Clinical", "Trigger Happy", "Nearly Man", "Swing and a Miss"],
-  },
-  {
-    title: "Defending",
-    titles: [
-      "Hardman",
-      "Sweeper",
-      "Enforcer",
-      "Tackle Hero",
-      "Interception Hero",
-      "Terminator",
-      "The Interceptor",
-    ],
-  },
-  {
-    title: "Goalkeepers",
-    titles: ["The Wall", "Stone Cold", "Superhero"],
-  },
-  {
-    title: "Consistency",
-    titles: ["Reliable", "Always There", "On Fire", "TOTW King"],
-  },
-  {
-    title: "Results",
-    titles: ["Winner", "Unbeaten", "Unlucky", "Unlucky Hero"],
-  },
-  {
-    title: "Misc",
-    titles: ["Not Too Cool 4 Skool"],
-  },
-];
+  { title: 'Attacking', titles: ['Top Scorer', 'Goal Machine', 'Playmaker', 'Assist Hero', 'Most Involved', 'One Game Wonder', 'Chance Creator', 'Key Pass Hero', 'Hat Trick Hero'] },
+  { title: 'Defending', titles: ['Hardman', 'Sweeper', 'Enforcer', 'Tackle Hero', 'Interception Hero', 'Terminator', 'The Interceptor'] },
+  { title: 'Goalkeepers', titles: ['The Wall', 'Stone Cold', 'Superhero'] },
+  { title: 'Consistency', titles: ['Reliable', 'Always There', 'On Fire', 'TOTW King', 'Winner', 'Unlucky', 'Hardest Worker'] },
+]
 
 export default function Awards() {
   const { players, loading: playersLoading } = usePlayers();

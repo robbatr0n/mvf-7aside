@@ -105,11 +105,11 @@ export default function Leaderboard({
   const sortedStats = useMemo(() => {
     return tab === "attacking"
       ? [...activeStats].sort(
-          (a, b) => b.goal_involvements - a.goal_involvements,
-        )
+        (a, b) => b.goal_involvements - a.goal_involvements,
+      )
       : [...activeStats].sort(
-          (a, b) => b.defensive_actions - a.defensive_actions,
-        );
+        (a, b) => b.defensive_actions - a.defensive_actions,
+      );
   }, [activeStats, tab]);
 
   const displayStats = showAll ? sortedStats : sortedStats.slice(0, 8);
@@ -127,47 +127,41 @@ export default function Leaderboard({
           <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setView("overall")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                view === "overall"
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === "overall"
                   ? "bg-gray-700 text-white"
                   : "text-gray-500 hover:text-gray-300"
-              }`}
+                }`}
             >
               Overall
             </button>
             <button
               onClick={() => setView("last3")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                view === "last3"
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${view === "last3"
                   ? "bg-gray-700 text-white"
                   : "text-gray-500 hover:text-gray-300"
-              }`}
+                }`}
             >
               Last 3
             </button>
           </div>
 
-          <div className="w-px h-4 bg-gray-700" />
-
           <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setTab("attacking")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                tab === "attacking"
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === "attacking"
                   ? "bg-gray-700 text-white"
                   : "text-gray-500 hover:text-gray-300"
-              }`}
+                }`}
             >
               <span className="sm:hidden">⚽</span>
               <span className="hidden sm:inline">⚽ Attacking</span>
             </button>
             <button
               onClick={() => setTab("defending")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                tab === "defending"
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === "defending"
                   ? "bg-gray-700 text-white"
                   : "text-gray-500 hover:text-gray-300"
-              }`}
+                }`}
             >
               <span className="sm:hidden">💪</span>
               <span className="hidden sm:inline">💪 Defending</span>
@@ -202,9 +196,8 @@ export default function Leaderboard({
                 {displayStats.map((s, i) => (
                   <tr
                     key={s.player.id}
-                    className={`border-b border-gray-800/50 last:border-0 transition-colors hover:bg-gray-800/40 ${
-                      i === 0 ? "bg-gray-800/20" : ""
-                    }`}
+                    className={`border-b border-gray-800/50 last:border-0 transition-colors hover:bg-gray-800/40 ${i === 0 ? "bg-gray-800/20" : ""
+                      }`}
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
