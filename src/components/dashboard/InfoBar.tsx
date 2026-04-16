@@ -98,6 +98,11 @@ const STAT_GUIDE = [
     name: "Team of the Week",
     desc: "The best 7 players from a single game using the same scoring formula applied to that game only. Shown as 🏅 ×N on player profiles and cards.",
   },
+  {
+    abbr: 'Rating',
+    name: 'Player Rating',
+    desc: 'A 0–10 rating shown on the Best VII and Team of the Week pitch graphic. Scores are calculated using the composite formula then curved using a square root scale. For Best VII ratings are based on season-long per-game averages. For Team of the Week they reflect that single game only.'
+  },
 ];
 
 interface Props {
@@ -110,12 +115,12 @@ export default function InfoBar({ games }: Props) {
   const lastUpdated =
     games.length > 0
       ? new Date(
-          Math.max(...games.map((g) => new Date(g.date).getTime())),
-        ).toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
+        Math.max(...games.map((g) => new Date(g.date).getTime())),
+      ).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
       : "—";
 
   return (

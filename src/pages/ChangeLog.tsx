@@ -2,6 +2,16 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: '1.7.0',
+    date: 'April 2026',
+    changes: [
+      'Added player ratings on the Best VII and Team of the Week pitch graphic',
+      'Redesigned awards into four sections: Attacking, Defending, Goalkeepers and Consistency',
+      'Streamlined awards — removed overlapping and redundant awards, down to 25 total',
+      'Game in progress indicator on dashboard when a game is being tagged',
+    ],
+  },
+  {
     version: "1.6.0",
     date: "March 2026",
     changes: [
