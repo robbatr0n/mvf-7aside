@@ -23,7 +23,7 @@ function AwardCard({ emoji, title, name, value, unclaimed }: AwardCardProps) {
         <p className="text-gray-600 dark:text-[#9CA3AF] text-xs uppercase tracking-wider font-semibold">
           {title}
         </p>
-        <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5 truncate">{name}</p>
+        <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5">{name}</p>
         {unclaimed ? (
           <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">Not yet claimed</p>
         ) : (

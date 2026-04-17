@@ -24,7 +24,7 @@ function AwardCard({ award }: { award: Award }) {
           </>
         ) : (
           <>
-            <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5 truncate">{award.winners.join(", ")}</p>
+            <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5">{award.winners.join(", ")}</p>
             <p className="text-[#1C1C1C] dark:text-[#E5E6E3] text-xs mt-0.5">{award.value}</p>
             <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">{award.description}</p>
           </>
@@ -40,7 +40,7 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
       <span className="text-xl w-7 flex-shrink-0">{award.emoji}</span>
       <div className="min-w-0">
         <p className="text-gray-600 dark:text-[#9CA3AF] text-xs uppercase tracking-wider font-semibold">{award.title}</p>
-        <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5 truncate">{award.players.join(" & ")}</p>
+        <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5">{award.players.join(" & ")}</p>
         <p className="text-[#1C1C1C] dark:text-[#E5E6E3] text-xs mt-0.5">{award.value}</p>
         <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">{award.description}</p>
       </div>

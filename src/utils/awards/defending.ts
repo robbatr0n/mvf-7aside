@@ -60,7 +60,7 @@ export function buildDefendingAwards(
 
     const tacklesPerGameWinners = topN(qualified, 'tackles_per_game')
     const terminator: Award = {
-        emoji: '💪',
+        emoji: '🤖',
         title: 'Terminator',
         description: `Best tackles per game rate (min ${MIN_GAMES} games)`,
         winners: tacklesPerGameWinners.map(s => s.player.name),
@@ -70,7 +70,7 @@ export function buildDefendingAwards(
 
     const interceptionsPerGameWinners = topN(qualified, 'interceptions_per_game')
     const theInterceptor: Award = {
-        emoji: '✋',
+        emoji: '🧲',
         title: 'The Interceptor',
         description: `Best interceptions per game rate (min ${MIN_GAMES} games)`,
         winners: interceptionsPerGameWinners.map(s => s.player.name),

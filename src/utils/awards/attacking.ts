@@ -100,7 +100,7 @@ export function buildAttackingAwards(
 
     const assistHeroResult = bestSingleGameStat('assist', eligibleStats, events, players)
     const assistHero: Award = {
-        emoji: '🎯',
+        emoji: '🪄',
         title: 'Assist Hero',
         description: 'Most assists in a single game',
         winners: assistHeroResult.winners,
@@ -142,7 +142,7 @@ export function buildAttackingAwards(
         .filter(s => (bestSingleGA.get(s.player.id) ?? 0) === bestSingle && bestSingle > 0)
         .map(s => s.player.name)
     const oneGameWonder: Award = {
-        emoji: '🌟',
+        emoji: '💫',
         title: 'One Game Wonder',
         description: 'Best single game G+A',
         winners: wonderWinners,
@@ -162,7 +162,7 @@ export function buildAttackingAwards(
 
     const keyPassHeroResult = bestSingleGameStat('key_pass', eligibleStats, events, players)
     const keyPassHero: Award = {
-        emoji: '🎪',
+        emoji: '🔑',
         title: 'Key Pass Hero',
         description: 'Most key passes in a single game',
         winners: keyPassHeroResult.winners,
