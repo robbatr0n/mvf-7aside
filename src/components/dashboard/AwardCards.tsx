@@ -12,18 +12,23 @@ interface AwardCardProps {
   title: string;
   name: string;
   value: string;
+  unclaimed?: boolean;
 }
 
-function AwardCard({ emoji, title, name, value }: AwardCardProps) {
+function AwardCard({ emoji, title, name, value, unclaimed }: AwardCardProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-2">
-      <span className="text-xl">{emoji}</span>
-      <div>
-        <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold">
+    <div className={`bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl p-3 flex items-start gap-3 ${unclaimed ? "opacity-40" : ""}`}>
+      <span className="text-xl w-7 flex-shrink-0">{emoji}</span>
+      <div className="min-w-0">
+        <p className="text-gray-600 dark:text-[#9CA3AF] text-xs uppercase tracking-wider font-semibold">
           {title}
         </p>
-        <p className="text-white font-bold text-base mt-0.5">{name}</p>
-        <p className="text-gray-500 text-xs">{value}</p>
+        <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5 truncate">{name}</p>
+        {unclaimed ? (
+          <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">Not yet claimed</p>
+        ) : (
+          <p className="text-[#1C1C1C] dark:text-[#E5E6E3] text-xs mt-0.5">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -46,6 +51,9 @@ export default function AwardCards({ stats, partnership }: Props) {
 
   return (
     <div className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">
+        Awards
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <AwardCard
           emoji="⚽"
@@ -75,21 +83,19 @@ export default function AwardCards({ stats, partnership }: Props) {
             value={partnership.value}
           />
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 opacity-40 space-y-3">
-            <span className="text-2xl">🤝</span>
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wider font-semibold">
-                Best Partnership
-              </p>
-              <p className="text-gray-600 text-sm mt-1">Not yet</p>
-            </div>
-          </div>
+          <AwardCard
+            emoji="🤝"
+            title="Best Partnership"
+            name="—"
+            value=""
+            unclaimed
+          />
         )}
       </div>
       <div className="flex justify-end">
         <Link
           to="/awards"
-          className="text-gray-500 hover:text-white text-sm transition-colors"
+          className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-sm transition-colors"
         >
           View all awards →
         </Link>

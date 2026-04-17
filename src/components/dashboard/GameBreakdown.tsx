@@ -21,21 +21,21 @@ function GoalList({
     >
       {goals.map((g, i) => (
         <div key={i}>
-          <span className="text-white text-sm font-medium">
+          <span className="text-[#1C1C1C] dark:text-[#E5E6E3] text-sm font-medium">
             ⚽{" "}
             {g.scorer.is_guest ? (
               "Guest"
             ) : (
               <Link
                 to={`/player/${g.scorer.id}`}
-                className="hover:text-blue-400 transition-colors"
+                className="hover:text-mvf transition-colors"
               >
                 {g.scorer.name}
               </Link>
             )}
             {g.team_override !== null && (
               <span
-                className="text-gray-500 text-xs ml-1.5"
+                className="text-gray-600 dark:text-[#9CA3AF] text-xs ml-1.5"
                 title="Scored after switching teams"
               >
                 ↔
@@ -44,7 +44,7 @@ function GoalList({
           </span>
           {g.assister && (
             <p
-              className={`text-gray-500 text-xs ${align === "right" ? "text-right" : "text-left"}`}
+              className={`text-gray-600 dark:text-[#9CA3AF] text-xs ${align === "right" ? "text-right" : "text-left"}`}
             >
               assist:{" "}
               {g.assister.is_guest ? (
@@ -52,7 +52,7 @@ function GoalList({
               ) : (
                 <Link
                   to={`/player/${g.assister.id}`}
-                  className="hover:text-blue-400 transition-colors"
+                  className="hover:text-mvf transition-colors"
                 >
                   {g.assister.name}
                 </Link>
@@ -85,27 +85,25 @@ function StatBar({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className={t1Wins ? "text-white font-semibold" : "text-gray-400"}>
-          {team1Value}
-          {suffix}
+        <span className={t1Wins ? "text-[#1C1C1C] dark:text-[#E5E6E3] font-semibold" : "text-gray-600 dark:text-[#9CA3AF]"}>
+          {team1Value}{suffix}
         </span>
-        <span className="text-gray-600">{label}</span>
-        <span className={t2Wins ? "text-white font-semibold" : "text-gray-400"}>
-          {team2Value}
-          {suffix}
+        <span className="text-gray-600 dark:text-[#9CA3AF]">{label}</span>
+        <span className={t2Wins ? "text-[#1C1C1C] dark:text-[#E5E6E3] font-semibold" : "text-gray-600 dark:text-[#9CA3AF]"}>
+          {team2Value}{suffix}
         </span>
       </div>
       <div className="flex items-center gap-1 h-1">
         <div className="flex-1 flex justify-end">
           <div
-            className={`h-full rounded-full transition-all ${t1Wins ? "bg-blue-500" : "bg-gray-700"}`}
+            className={`h-full rounded-full transition-all ${t1Wins ? "bg-mvf" : "bg-gray-200 dark:bg-gray-700"}`}
             style={{ width: `${t1Width}%` }}
           />
         </div>
-        <div className="w-px h-2 bg-gray-800" />
+        <div className="w-px h-2 bg-gray-200 dark:bg-[#1a1e21]" />
         <div className="flex-1">
           <div
-            className={`h-full rounded-full transition-all ${t2Wins ? "bg-orange-500" : "bg-gray-700"}`}
+            className={`h-full rounded-full transition-all ${t2Wins ? "bg-orange-500" : "bg-gray-200 dark:bg-gray-700"}`}
             style={{ width: `${t2Width}%` }}
           />
         </div>
@@ -122,8 +120,8 @@ function TeamStatsPanel({
   team2Stats: TeamStats;
 }) {
   return (
-    <div className="border-t border-gray-800 px-5 py-5 space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 text-center">
+    <div className="border-t border-[#D4D3D0] dark:border-[#2a2e31] px-5 py-5 space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF] text-center">
         Team Stats
       </p>
       <StatBar label="Shots" team1Value={team1Stats.shots} team2Value={team2Stats.shots} />
@@ -149,23 +147,23 @@ export default function GameBreakdown({ summaries }: Props) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">
         Game Breakdown
       </h2>
 
-      <div className={`bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden ${isInProgress ? 'border-t-2 border-t-mvf' : ''}`}>
+      <div className={`bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl overflow-hidden ${isInProgress ? "border-t-2 border-t-mvf" : ""}`}>
         {/* Navigation header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#D4D3D0] dark:border-[#2a2e31]">
           <button
             onClick={() => setIndex((i) => i + 1)}
             disabled={index >= summaries.length - 1}
-            className="text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+            className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
           >
             ← Older
           </button>
 
           <div className="text-center space-y-1">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-[#9CA3AF] text-sm">
               {new Date(current.game.date).toLocaleDateString("en-GB", {
                 weekday: "long",
                 day: "numeric",
@@ -180,13 +178,13 @@ export default function GameBreakdown({ summaries }: Props) {
                 </span>
               ) : (
                 <>
-                  <span className="text-gray-600 text-xs">
+                  <span className="text-gray-600 dark:text-[#9CA3AF] text-xs">
                     Game {summaries.length - index} of {summaries.length}
                   </span>
                   {index > 0 && (
                     <button
                       onClick={() => setIndex(0)}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      className="text-xs text-mvf hover:text-mvf-dark transition-colors"
                     >
                       Latest →
                     </button>
@@ -199,31 +197,31 @@ export default function GameBreakdown({ summaries }: Props) {
           <button
             onClick={() => setIndex((i) => i - 1)}
             disabled={index === 0}
-            className="text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+            className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
           >
             Newer →
           </button>
         </div>
 
         {/* Score */}
-        <div className="grid grid-cols-3 items-center px-6 py-5 border-b border-gray-800">
-          <p className="text-white font-semibold text-sm">Non Bibs</p>
+        <div className="grid grid-cols-3 items-center px-6 py-5 border-b border-[#D4D3D0] dark:border-[#2a2e31]">
+          <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-semibold text-sm">Non Bibs</p>
           <div className="flex items-center justify-center gap-3">
-            <span className={`text-3xl font-black tabular-nums ${team1Score > team2Score ? "text-white" : "text-gray-600"}`}>
+            <span className={`text-3xl font-black tabular-nums ${team1Score > team2Score ? "text-[#1C1C1C] dark:text-[#E5E6E3]" : "text-gray-300 dark:text-[#737373]"}`}>
               {team1Score}
             </span>
-            <span className="text-gray-700 text-xl">:</span>
-            <span className={`text-3xl font-black tabular-nums ${team2Score > team1Score ? "text-white" : "text-gray-600"}`}>
+            <span className="text-gray-300 dark:text-gray-700 text-xl">:</span>
+            <span className={`text-3xl font-black tabular-nums ${team2Score > team1Score ? "text-[#1C1C1C] dark:text-[#E5E6E3]" : "text-gray-300 dark:text-[#737373]"}`}>
               {team2Score}
             </span>
           </div>
-          <p className="text-orange-400 font-semibold text-sm text-right">🟠 Bibs</p>
+          <p className="text-orange-500 font-semibold text-sm text-right">🟠 Bibs</p>
         </div>
 
         {/* Goal lists or in progress message */}
         {isInProgress && team1Score === 0 && team2Score === 0 ? (
           <div className="px-6 py-5">
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-600 dark:text-[#9CA3AF] text-sm">
               No goals tagged yet — check back soon for the full breakdown.
             </p>
           </div>
@@ -250,11 +248,15 @@ export default function GameBreakdown({ summaries }: Props) {
                 <button
                   key={i}
                   onClick={() => setIndex(reversedIndex)}
-                  className={`rounded-full transition-all ${reversedIndex === index
-                    ? "bg-mvf w-4 h-1.5"
-                    : "bg-gray-700 hover:bg-gray-600 w-1.5 h-1.5"
-                    }`}
-                />
+                  className="p-2 flex items-center justify-center"
+                >
+                  <span
+                    className={`block rounded-full transition-all ${reversedIndex === index
+                        ? "bg-mvf w-4 h-1.5"
+                        : "bg-gray-200 dark:bg-gray-700 w-1.5 h-1.5"
+                      }`}
+                  />
+                </button>
               );
             })}
           </div>

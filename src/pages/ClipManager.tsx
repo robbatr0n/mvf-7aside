@@ -67,8 +67,8 @@ export default function ClipManager() {
 
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <div className="bg-gray-900 p-8 rounded-xl w-full max-w-sm space-y-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#030809]">
+        <div className="bg-[#111518] p-8 rounded-xl w-full max-w-sm space-y-4">
           <h1 className="text-white text-xl font-bold">Clip Manager</h1>
           <input
             type="password"
@@ -91,7 +91,7 @@ export default function ClipManager() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-[#030809] text-white">
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold">Clip Manager</h1>
@@ -114,7 +114,7 @@ export default function ClipManager() {
               return (
                 <div
                   key={event.id}
-                  className="bg-gray-900 border border-gray-800 rounded-2xl px-5 py-4 space-y-3"
+                  className="bg-[#111518] border border-gray-800 rounded-2xl px-5 py-4 space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -179,7 +179,7 @@ export default function ClipManager() {
               return (
                 <div
                   key={event.id}
-                  className="bg-gray-900 border border-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between"
+                  className="bg-[#111518] border border-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between"
                 >
                   <div>
                     <p className="text-white font-semibold">

@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-mvf: #B20112;
+  --color-mvf: #B0000F;
+  --color-mvf-dark: #760207;
+
+  /* Dark theme surfaces */
+  --color-surface-dark-page: #030809;
+  --color-surface-dark-card: #111518;
+  --color-surface-dark-card-alt: #1a1e21;
+  --color-surface-dark-border: #2a2e31;
+
+  /* Light theme surfaces */
+  --color-surface-light-page: #F5F4F2;
+  --color-surface-light-card: #FFFFFF;
+  --color-surface-light-border: #D4D3D0;
+
+  /* Shared text */
+  --color-text-primary-dark: #E5E6E3;
+  --color-text-primary-light: #1C1C1C;
+  --color-text-muted: #737373;
 }
+
+@variant dark (&:where(.dark, .dark *));

@@ -21,60 +21,32 @@ export default function Dashboard() {
   const { games, loading: gamesLoading } = useGames();
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
-  const goalkeeperStats = useGoalkeeperStats(
-    players,
-    events,
-    games,
-    gamePlayers,
-  );
+
+  const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
+
   const { teamOfSeasonIds, totwAppearances } = useTeamStats(
-    stats,
-    goalkeeperStats,
-    players,
-    events,
-    games,
-    gamePlayers,
+    stats, goalkeeperStats, players, events, games, gamePlayers,
   );
+
   const gameSummaries = useMemo(
     () => calculateGameSummaries(games, players, events, gamePlayers),
     [games, players, events, gamePlayers],
   );
 
   const { partnership } = useMemo(
-    () =>
-      calculateAwards(
-        stats,
-        events,
-        games,
-        gamePlayers,
-        players,
-        goalkeeperStats,
-        totwAppearances,
-      ),
-    [
-      stats,
-      events,
-      games,
-      gamePlayers,
-      players,
-      goalkeeperStats,
-      totwAppearances,
-    ],
+    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances),
+    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances],
   );
 
-  const loading =
-    playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
+  const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
         {loading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-24 bg-gray-900 rounded-2xl animate-pulse"
-              />
+              <div key={i} className="h-24 bg-gray-200 dark:bg-[#111518] rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : (

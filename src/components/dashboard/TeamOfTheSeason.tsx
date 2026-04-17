@@ -51,11 +51,11 @@ function PlayerPin({
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isKeeper
           ? "bg-yellow-500/20 border-yellow-400"
-          : "bg-white/20 border-white"
+          : "bg-[#FFFFFF]/20 border-white"
           }`}
       >
         <div
-          className={`w-2.5 h-2.5 rounded-full ${isKeeper ? "bg-yellow-400" : "bg-white"}`}
+          className={`w-2.5 h-2.5 rounded-full ${isKeeper ? "bg-yellow-400" : "bg-[#FFFFFF]"}`}
         />
       </div>
       <span
@@ -158,27 +158,23 @@ export default function TeamOfTheSeason({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">
         {mode === "alltime" ? "Best VII" : "Team of the Week"}
       </h2>
 
       {/* Toggle */}
-      <div className="flex rounded-lg overflow-hidden border border-gray-800">
+      <div className="flex rounded-lg overflow-hidden border border-[#D4D3D0] dark:border-[#2a2e31]">
         {(["alltime", "thisweek", "history"] as Mode[]).map((m, i) => (
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`flex-1 py-2 text-xs font-medium transition-colors ${i < 2 ? "border-r border-gray-800" : ""
+            className={`flex-1 py-2 text-xs font-medium transition-colors ${i < 2 ? "border-r border-[#D4D3D0] dark:border-[#2a2e31]" : ""
               } ${mode === m
                 ? "bg-mvf text-white"
-                : "bg-gray-900 text-gray-500 hover:text-gray-300"
+                : "bg-gray-100 dark:bg-[#111518] text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3]"
               }`}
           >
-            {m === "alltime"
-              ? "All time"
-              : m === "thisweek"
-                ? "This week"
-                : "History"}
+            {m === "alltime" ? "All time" : m === "thisweek" ? "This week" : "History"}
           </button>
         ))}
       </div>
@@ -188,14 +184,12 @@ export default function TeamOfTheSeason({
         <select
           value={selectedGameId || sortedGames[1]?.id || ""}
           onChange={(e) => setSelectedGameId(e.target.value)}
-          className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-gray-600 transition-colors"
+          className="w-full bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-xl px-4 py-2.5 text-[#1C1C1C] dark:text-[#E5E6E3] text-sm outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
         >
           {sortedGames.slice(1).map((game) => (
             <option key={game.id} value={game.id}>
               {new Date(game.date).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
+                day: "numeric", month: "long", year: "numeric",
               })}
             </option>
           ))}

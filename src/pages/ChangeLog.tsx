@@ -2,6 +2,23 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: '1.8.0',
+    date: 'April 2026',
+    changes: [
+      'Redesigned dark/light mode switcher to a pill toggle in the nav bar',
+      'Redesigned award cards to a compact horizontal layout across the dashboard, awards page and player profiles',
+      'Awards page now shows 1 award per row on mobile, up to 3 columns on desktop',
+      'Added red underline to section headings on the awards page',
+      'Standardised page width across all pages for consistent layout when navigating',
+      'Fixed dark mode background on dashboard — was pure black, now consistent with all other pages',
+      'Removed horizontal row separators from the player leaderboard and game-by-game tables',
+      'Restructured goalkeeper leaderboard to match the player leaderboard layout',
+      'Fixed Draw form badge to use light grey in light mode',
+      'Fixed low-contrast stat values in game breakdown comparison bars',
+      'Improved tap targets on game pagination dots for mobile',
+    ],
+  },
+  {
     version: '1.7.0',
     date: 'April 2026',
     changes: [
@@ -83,44 +100,41 @@ const CHANGELOG = [
       "Best Partnership award tracking most common goal and assist combinations",
       "Win, loss and draw tracking with form badges showing last 5 games",
       "Guest player support",
-      "Private tagger to verify autmatic statistics",
+      "Private tagger to verify automatic statistics",
     ],
   },
 ];
 
 export default function Changelog() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-2xl mx-auto px-6 py-10 space-y-10">
+    <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
+      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
         <div className="space-y-1">
-          <Link
-            to="/"
-            className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
-          >
+          <Link to="/" className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors">
             ← Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-white">Changelog</h1>
+          <h1 className="text-2xl font-bold text-[#1C1C1C] dark:text-[#E5E6E3]">Changelog</h1>
         </div>
 
         <div className="space-y-10">
           {CHANGELOG.map((release) => (
             <div key={release.version} className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-white font-bold text-lg">
+                <span className="text-[#1C1C1C] dark:text-[#E5E6E3] font-bold text-lg">
                   {release.version}
                 </span>
                 {release.label && (
-                  <span className="bg-blue-900/40 border border-blue-800/50 text-blue-400 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  <span className="bg-mvf/10 border border-mvf/30 text-mvf text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {release.label}
                   </span>
                 )}
-                <span className="text-gray-600 text-sm ml-auto">
+                <span className="text-gray-600 dark:text-[#9CA3AF] text-sm ml-auto">
                   {release.date}
                 </span>
               </div>
-              <ul className="space-y-2 border-l border-gray-800 pl-4">
+              <ul className="space-y-2 border-l-2 border-[#D4D3D0] dark:border-[#2a2e31] pl-4">
                 {release.changes.map((change, i) => (
-                  <li key={i} className="text-gray-400 text-sm leading-relaxed">
+                  <li key={i} className="text-gray-600 dark:text-[#9CA3AF] text-sm leading-relaxed">
                     {change}
                   </li>
                 ))}

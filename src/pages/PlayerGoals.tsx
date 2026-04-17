@@ -10,13 +10,9 @@ export default function PlayerGoals() {
   const { players, loading: playersLoading } = usePlayers();
   const { events, loading: eventsLoading } = useEvents();
   const { games, loading: gamesLoading } = useGames();
-  const [activeClip, setActiveClip] = useState<{
-    src: string;
-    label: string;
-  } | null>(null);
+  const [activeClip, setActiveClip] = useState<{ src: string; label: string } | null>(null);
 
   const loading = playersLoading || eventsLoading || gamesLoading;
-
   const player = players.find((p) => p.id === id);
 
   const goalClips = events.filter(
@@ -33,23 +29,20 @@ export default function PlayerGoals() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white">
-        <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
+      <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809]">
+        <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
           <div className="space-y-1">
-            <div className="h-3 w-20 bg-gray-800 rounded animate-pulse" />
-            <div className="h-7 w-32 bg-gray-800 rounded animate-pulse mt-2" />
-            <div className="h-3 w-16 bg-gray-800 rounded animate-pulse mt-1" />
+            <div className="h-3 w-20 bg-gray-200 dark:bg-[#1a1e21] rounded animate-pulse" />
+            <div className="h-7 w-32 bg-gray-200 dark:bg-[#1a1e21] rounded animate-pulse mt-2" />
+            <div className="h-3 w-16 bg-gray-200 dark:bg-[#1a1e21] rounded animate-pulse mt-1" />
           </div>
           <div className="space-y-6">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="space-y-4">
-                <div className="h-3 w-28 bg-gray-800 rounded animate-pulse" />
+                <div className="h-3 w-28 bg-gray-200 dark:bg-[#1a1e21] rounded animate-pulse" />
                 <div className="flex flex-wrap gap-3">
                   {[...Array(2)].map((_, j) => (
-                    <div
-                      key={j}
-                      className="w-full sm:w-[calc(50%-6px)] aspect-video bg-gray-800 rounded-2xl animate-pulse"
-                    />
+                    <div key={j} className="w-full sm:w-[calc(50%-6px)] aspect-video bg-gray-200 dark:bg-[#1a1e21] rounded-2xl animate-pulse" />
                   ))}
                 </div>
               </div>
@@ -63,40 +56,34 @@ export default function PlayerGoals() {
   if (!player) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
-        {/* Header */}
+    <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
+      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
         <div className="space-y-1">
-          <Link
-            to={`/player/${id}`}
-            className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
-          >
+          <Link to={`/player/${id}`} className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors">
             ← {player.name}
           </Link>
-          <h1 className="text-2xl font-bold text-white">All goals</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-2xl font-bold text-[#1C1C1C] dark:text-[#E5E6E3]">All goals</h1>
+          <p className="text-gray-600 dark:text-[#9CA3AF] text-sm">
             {goalClips.length} clip{goalClips.length !== 1 ? "s" : ""}
           </p>
         </div>
 
         {grouped.length === 0 && (
-          <p className="text-gray-600 text-sm">No clips added yet.</p>
+          <p className="text-gray-600 dark:text-[#9CA3AF] text-sm">No clips added yet.</p>
         )}
 
         {grouped.map(({ game, clips }) => (
           <section key={game.id} className="space-y-4">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">
               {new Date(game.date).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
+                day: "numeric", month: "long", year: "numeric",
               })}
             </h2>
             <div className="flex flex-wrap gap-3">
               {clips.map((event, i) => (
                 <div
                   key={event.id}
-                  className="w-full sm:w-[calc(50%-6px)] bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden cursor-pointer"
+                  className="w-full sm:w-[calc(50%-6px)] bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl overflow-hidden cursor-pointer"
                   onClick={() =>
                     setActiveClip({
                       src: event.clip_url!,
@@ -118,9 +105,7 @@ export default function PlayerGoals() {
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-500 text-xs px-4 py-2">
-                    Goal {i + 1}
-                  </p>
+                  <p className="text-gray-600 dark:text-[#9CA3AF] text-xs px-4 py-2">Goal {i + 1}</p>
                 </div>
               ))}
             </div>
@@ -129,11 +114,7 @@ export default function PlayerGoals() {
       </div>
 
       {activeClip && (
-        <VideoModal
-          src={activeClip.src}
-          label={activeClip.label}
-          onClose={() => setActiveClip(null)}
-        />
+        <VideoModal src={activeClip.src} label={activeClip.label} onClose={() => setActiveClip(null)} />
       )}
     </div>
   );
