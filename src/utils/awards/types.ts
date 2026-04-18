@@ -5,6 +5,7 @@ export interface Award {
     winners: string[]
     value: string
     noWinner?: boolean
+    runnerUp?: { names: string[]; value: string }
 }
 
 export interface PartnershipAward {
@@ -14,4 +15,5 @@ export interface PartnershipAward {
     players: string[]
     value: string
     noWinner?: boolean
+    runnerUp?: { names: string[]; value: string }
 }

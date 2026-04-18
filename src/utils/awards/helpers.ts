@@ -11,12 +11,22 @@ export function topN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[
     return sorted.filter(s => s[key] === best)
 }
 
+export function runnerUpN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
+    const sorted = [...stats].sort((a, b) => (b[key] as number) - (a[key] as number))
+    const best = sorted[0]?.[key] as number
+    if (best === undefined || best === 0) return []
+    const remaining = sorted.filter(s => (s[key] as number) < best)
+    const secondBest = remaining[0]?.[key] as number
+    if (secondBest === undefined || secondBest === 0) return []
+    return remaining.filter(s => (s[key] as number) === secondBest)
+}
+
 export function bestSingleGameStat(
     eventType: EventType,
     eligibleStats: PlayerStats[],
     events: Event[],
     players: Player[],
-): { winners: string[]; best: number } {
+): { winners: string[]; best: number; runnerUp?: { winners: string[]; best: number } } {
     const byGameKey = new Map<string, number>()
     events.forEach(e => {
         if (e.event_type !== eventType) return
@@ -44,5 +54,21 @@ export function bestSingleGameStat(
         .filter(s => (bestByPlayer.get(s.player.id) ?? 0) === best && best > 0)
         .map(s => s.player.name)
 
-    return { winners, best }
+    const secondBest = Math.max(
+        0,
+        ...eligibleStats
+            .map(s => bestByPlayer.get(s.player.id) ?? 0)
+            .filter(count => count < best),
+    )
+    const runnerUpWinners = secondBest > 0
+        ? eligibleStats
+            .filter(s => (bestByPlayer.get(s.player.id) ?? 0) === secondBest)
+            .map(s => s.player.name)
+        : []
+
+    return {
+        winners,
+        best,
+        runnerUp: runnerUpWinners.length > 0 ? { winners: runnerUpWinners, best: secondBest } : undefined,
+    }
 }

@@ -26,6 +26,13 @@ function AwardCard({ award }: { award: Award }) {
           <>
             <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5">{award.winners.join(", ")}</p>
             <p className="text-[#1C1C1C] dark:text-[#E5E6E3] text-xs mt-0.5">{award.value}</p>
+            {award.runnerUp && (
+              <p className="text-gray-500 dark:text-[#6B7280] text-xs mt-0.5">
+                {award.runnerUp.names.length > 1 ? "Runners-up" : "Runner-up"}: {award.runnerUp.names.length <= 2
+                  ? `${award.runnerUp.names.join(", ")} — ${award.runnerUp.value}`
+                  : `${award.runnerUp.names.length} players — ${award.runnerUp.value}`}
+              </p>
+            )}
             <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">{award.description}</p>
           </>
         )}
@@ -42,6 +49,13 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
         <p className="text-gray-600 dark:text-[#9CA3AF] text-xs uppercase tracking-wider font-semibold">{award.title}</p>
         <p className="text-[#1C1C1C] dark:text-[#E5E6E3] font-medium text-sm mt-0.5">{award.players.join(" & ")}</p>
         <p className="text-[#1C1C1C] dark:text-[#E5E6E3] text-xs mt-0.5">{award.value}</p>
+        {award.runnerUp && (
+          <p className="text-gray-500 dark:text-[#6B7280] text-xs mt-0.5">
+            {award.runnerUp.names.length > 1 ? "Runners-up" : "Runner-up"}: {award.runnerUp.names.length <= 2
+              ? `${award.runnerUp.names.join(" & ")} — ${award.runnerUp.value}`
+              : `${award.runnerUp.names.length} pairs — ${award.runnerUp.value}`}
+          </p>
+        )}
         <p className="text-gray-600 dark:text-[#9CA3AF] text-xs mt-0.5">{award.description}</p>
       </div>
     </div>

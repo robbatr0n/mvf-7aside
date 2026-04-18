@@ -6,9 +6,11 @@ export function buildGoalkeepingAwards(
     events: Event[],
     gamePlayers: GamePlayer[],
 ): Award[] {
-    const wallWinners = goalkeeperStats.length > 0
-        ? goalkeeperStats.filter(g => g.savePercentage === Math.max(...goalkeeperStats.map(g => g.savePercentage)))
-        : []
+    const wallSorted = [...goalkeeperStats].sort((a, b) => b.savePercentage - a.savePercentage)
+    const bestSVPct = wallSorted[0]?.savePercentage
+    const wallWinners = bestSVPct !== undefined ? wallSorted.filter(g => g.savePercentage === bestSVPct) : []
+    const secondSVPct = wallSorted.find(g => g.savePercentage < (bestSVPct ?? 0))?.savePercentage
+    const wallRunnerUps = secondSVPct !== undefined ? wallSorted.filter(g => g.savePercentage === secondSVPct) : []
     const theWall: Award = {
         emoji: '🧱',
         title: 'The Wall',
@@ -16,13 +18,16 @@ export function buildGoalkeepingAwards(
         winners: wallWinners.map(g => g.player.name),
         value: wallWinners[0] ? `${wallWinners[0].savePercentage}% saves` : '',
         noWinner: wallWinners.length === 0,
+        runnerUp: wallRunnerUps.length > 0
+            ? { names: wallRunnerUps.map(g => g.player.name), value: `${secondSVPct}% saves` }
+            : undefined,
     }
 
-    const cleanSheetWinners = goalkeeperStats.length > 0
-        ? goalkeeperStats.filter(g =>
-            g.cleanSheets === Math.max(...goalkeeperStats.map(g => g.cleanSheets)) && g.cleanSheets > 0
-        )
-        : []
+    const csSorted = [...goalkeeperStats].sort((a, b) => b.cleanSheets - a.cleanSheets)
+    const bestCS = csSorted.filter(g => g.cleanSheets > 0)[0]?.cleanSheets ?? 0
+    const cleanSheetWinners = bestCS > 0 ? csSorted.filter(g => g.cleanSheets === bestCS) : []
+    const secondCS = csSorted.find(g => g.cleanSheets > 0 && g.cleanSheets < bestCS)?.cleanSheets
+    const csRunnerUps = secondCS !== undefined && secondCS > 0 ? csSorted.filter(g => g.cleanSheets === secondCS) : []
     const stoneCold: Award = {
         emoji: '🔒',
         title: 'Stone Cold',
@@ -32,6 +37,9 @@ export function buildGoalkeepingAwards(
             ? `${cleanSheetWinners[0].cleanSheets} clean sheet${cleanSheetWinners[0].cleanSheets !== 1 ? 's' : ''}`
             : '',
         noWinner: cleanSheetWinners.length === 0,
+        runnerUp: csRunnerUps.length > 0
+            ? { names: csRunnerUps.map(g => g.player.name), value: `${secondCS} clean sheet${secondCS !== 1 ? 's' : ''}` }
+            : undefined,
     }
 
     const savesByGame = new Map<string, number>()
@@ -61,6 +69,10 @@ export function buildGoalkeepingAwards(
     const superheroWinners = goalkeeperStats.filter(
         g => (bestSavesByPlayer.get(g.player.id) ?? 0) === topSaves && topSaves > 0
     )
+    const secondTopSaves = Math.max(0, ...Array.from(bestSavesByPlayer.values()).filter(v => v < topSaves))
+    const superheroRunnerUps = secondTopSaves > 0
+        ? goalkeeperStats.filter(g => (bestSavesByPlayer.get(g.player.id) ?? 0) === secondTopSaves)
+        : []
     const superhero: Award = {
         emoji: '🦸',
         title: 'Superhero',
@@ -68,6 +80,9 @@ export function buildGoalkeepingAwards(
         winners: superheroWinners.map(g => g.player.name),
         value: `${topSaves} saves in one game`,
         noWinner: superheroWinners.length === 0,
+        runnerUp: superheroRunnerUps.length > 0
+            ? { names: superheroRunnerUps.map(g => g.player.name), value: `${secondTopSaves} saves in one game` }
+            : undefined,
     }
 
     return [theWall, stoneCold, superhero]
