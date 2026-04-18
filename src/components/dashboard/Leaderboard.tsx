@@ -113,7 +113,6 @@ export default function Leaderboard({
       );
   }, [activeStats, tab]);
 
-  const displayStats = showAll ? sortedStats : sortedStats.slice(0, 8);
   const headers = tab === "attacking" ? ATTACKING_HEADERS : DEFENDING_HEADERS;
 
   if (stats.length === 0) return null;
@@ -172,8 +171,8 @@ export default function Leaderboard({
       </div>
 
       <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl overflow-hidden">
-        <div className="relative">
-          <div className="overflow-x-auto sm:overflow-y-visible sm:max-h-none max-h-[500px] overflow-y-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[500px] sm:overflow-y-visible sm:max-h-none">
+          <div className="relative">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[#FFFFFF] dark:bg-[#111518]">
@@ -196,11 +195,10 @@ export default function Leaderboard({
                 </tr>
               </thead>
               <tbody>
-                {displayStats.map((s, i) => (
+                {sortedStats.map((s, i) => (
                   <tr
                     key={s.player.id}
-                    className={`transition-colors hover:bg-[#F5F4F2] dark:hover:bg-[#1a1e21]/40 ${i === 0 ? "border-l-2 border-l-mvf" : ""
-                      }`}
+                    className={`transition-colors hover:bg-[#F5F4F2] dark:hover:bg-[#1a1e21]/40 ${i === 0 ? "border-l-2 border-l-mvf" : ""} ${!showAll && i >= 8 ? "sm:hidden" : ""}`}
                   >
                     <td className="px-5 py-3.5 w-px whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
@@ -283,22 +281,18 @@ export default function Leaderboard({
                 ))}
               </tbody>
             </table>
+            {!showAll && sortedStats.length > 8 && (
+              <div className="hidden sm:block absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#FFFFFF] dark:from-[#111518] to-transparent pointer-events-none" />
+            )}
           </div>
-
-          {!showAll && sortedStats.length > 8 && (
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#FFFFFF] dark:from-[#111518] to-transparent pointer-events-none" />
-          )}
         </div>
-
         {sortedStats.length > 8 && (
-          <div className="px-5 py-3 text-center border-t border-[#D4D3D0] dark:border-[#2a2e31]">
+          <div className="hidden sm:block px-5 py-3 text-center border-t border-[#D4D3D0] dark:border-[#2a2e31]">
             <button
               onClick={() => setShowAll((prev) => !prev)}
               className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors"
             >
-              {showAll
-                ? "▲ Show less"
-                : `▼ Show all ${sortedStats.length} players`}
+              {showAll ? "▲ Show less" : `▼ Show all ${sortedStats.length} players`}
             </button>
           </div>
         )}

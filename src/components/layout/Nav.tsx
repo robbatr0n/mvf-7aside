@@ -40,14 +40,15 @@ export default function Nav() {
           ))}
           <button
             onClick={toggle}
-            className="ml-2 flex items-center gap-1.5 cursor-pointer"
+            className="ml-2 cursor-pointer flex items-center"
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-checked={isDark}
             role="switch"
           >
-            <span className="text-xs">{isDark ? '☀️' : '🌙'}</span>
-            <span className={`relative inline-block w-9 h-5 rounded-full transition-colors duration-200 ${isDark ? 'bg-mvf' : 'bg-[#D4D3D0]'}`}>
-              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${isDark ? 'translate-x-4' : 'translate-x-0'}`} />
+            <span className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 ${isDark ? 'bg-mvf' : 'bg-[#D4D3D0]'}`}>
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] transition-transform duration-200 ${isDark ? 'translate-x-4' : 'translate-x-0'}`}>
+                {isDark ? '☀️' : '🌙'}
+              </span>
             </span>
           </button>
         </div>
