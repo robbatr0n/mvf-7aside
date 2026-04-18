@@ -72,6 +72,9 @@ export function calculateGoalkeeperStats(
 
             const totalShots = totalSaves + totalConceded
             const savePercentage = totalShots > 0 ? Math.round((totalSaves / totalShots) * 100) : 0
+            const win_rate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0
+            const savesPerGame = gamesPlayed > 0 ? Math.round((totalSaves / gamesPlayed) * 100) / 100 : 0
+            const cleanSheetPercentage = gamesPlayed > 0 ? Math.round((cleanSheets / gamesPlayed) * 100) : 0
 
             return {
                 player: keeper,
@@ -84,6 +87,9 @@ export function calculateGoalkeeperStats(
                 wins,
                 losses,
                 draws,
+                win_rate,
+                savesPerGame,
+                cleanSheetPercentage,
                 form: formHistory.slice(-5),
             }
         })

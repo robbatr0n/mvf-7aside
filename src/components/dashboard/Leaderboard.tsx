@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { PlayerStats } from "../../types";
 import { calculateLastNPlayerStats } from "../../utils/stats";
@@ -37,9 +37,12 @@ const ATTACKING_HEADERS = [
   { key: "goal_involvements", label: "G+A", tooltip: "Goals + Assists" },
   { key: "shots_on_target", label: "SOT", tooltip: "Shots on Target" },
   { key: "key_passes", label: "KP", tooltip: "Key Passes" },
+  { key: "key_passes_per_game", label: "KP/G", tooltip: "Key Passes per Game" },
   { key: "shot_accuracy", label: "Acc%", tooltip: "Shot Accuracy" },
   { key: "shot_conversion", label: "Conv%", tooltip: "Shot Conversion" },
-  { key: "goals_per_game", label: "G/GM", tooltip: "Goals per Game" },
+  { key: "goals_per_game", label: "GPG", tooltip: "Goals per Game" },
+  { key: "hat_tricks", label: "HT", tooltip: "Hat Tricks (3+ goals in a game)" },
+  { key: "win_rate", label: "Win%", tooltip: "Win Rate" },
 ];
 
 const DEFENDING_HEADERS = [
@@ -57,6 +60,12 @@ const DEFENDING_HEADERS = [
     label: "INT/G",
     tooltip: "Interceptions per Game",
   },
+  {
+    key: "defensive_actions_per_game",
+    label: "DA/G",
+    tooltip: "Defensive Actions per Game",
+  },
+  { key: "win_rate", label: "Win%", tooltip: "Win Rate" },
 ];
 
 function Tooltip({
@@ -67,18 +76,34 @@ function Tooltip({
   children: React.ReactNode;
 }) {
   const [visible, setVisible] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTouch = (e: React.TouchEvent) => {
+    e.preventDefault();
+    setVisible(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setVisible(false), 2000);
+  };
+
   return (
     <span
       className="relative inline-block cursor-help"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
-      onClick={() => setVisible((v) => !v)}
+      onTouchStart={handleTouch}
     >
       {children}
       {visible && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-700 text-white text-xs rounded whitespace-nowrap z-10 pointer-events-none">
-          {text}
-        </span>
+        <>
+          {/* Desktop: appears below header, high z-index to clear sticky context */}
+          <span className="hidden sm:block absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2 py-1 bg-[#1C1C1C] dark:bg-[#2a2e31] text-white text-xs rounded whitespace-nowrap z-50 pointer-events-none shadow-lg">
+            {text}
+          </span>
+          {/* Mobile: fixed to viewport bottom, immune to any overflow/z-index clipping */}
+          <span className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-mvf text-white text-sm font-medium rounded-xl whitespace-nowrap z-50 pointer-events-none shadow-xl">
+            {text}
+          </span>
+        </>
       )}
     </span>
   );
@@ -168,6 +193,7 @@ export default function Leaderboard({
             </button>
           </div>
         </div>
+        <p className="sm:hidden text-xs text-gray-600 dark:text-[#9CA3AF] text-right">Tap column headers for details</p>
       </div>
 
       <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl overflow-hidden">
@@ -238,13 +264,22 @@ export default function Leaderboard({
                           {s.key_passes}
                         </td>
                         <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3] ">
-                          {s.shots_on_target + s.shots_off_target > 0 ? `${s.shot_accuracy}%` : "—"}
+                          {s.games_played > 0 ? s.key_passes_per_game : "—"}
                         </td>
                         <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]  bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]">
-                          {s.shots_on_target + s.shots_off_target > 0 ? `${s.shot_conversion}%` : "—"}
+                          {s.shots_on_target + s.shots_off_target > 0 ? `${s.shot_accuracy}%` : "—"}
                         </td>
                         <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3] ">
+                          {s.shots_on_target + s.shots_off_target > 0 ? `${s.shot_conversion}%` : "—"}
+                        </td>
+                        <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]  bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]">
                           {s.games_played > 0 ? s.goals_per_game : "—"}
+                        </td>
+                        <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3] ">
+                          {s.hat_tricks > 0 ? s.hat_tricks : "—"}
+                        </td>
+                        <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]  bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]">
+                          {s.games_played > 0 ? `${s.win_rate}%` : "—"}
                         </td>
                       </>
                     ) : (
@@ -266,6 +301,12 @@ export default function Leaderboard({
                         </td>
                         <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]  bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]">
                           {s.games_played > 0 ? s.interceptions_per_game : "—"}
+                        </td>
+                        <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3] ">
+                          {s.games_played > 0 ? s.defensive_actions_per_game : "—"}
+                        </td>
+                        <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]  bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]">
+                          {s.games_played > 0 ? `${s.win_rate}%` : "—"}
                         </td>
                       </>
                     )}

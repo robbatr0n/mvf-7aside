@@ -82,10 +82,6 @@ export default function PlayerProfile() {
     );
   }, [gameBreakdown]);
 
-  const winRate = useMemo(() => {
-    if (!playerStats || playerStats.games_played === 0) return 0;
-    return Math.round((playerStats.wins / playerStats.games_played) * 100);
-  }, [playerStats]);
 
   if (loading) {
     return (
@@ -252,17 +248,26 @@ export default function PlayerProfile() {
         {player.is_goalkeeper && gkStats ? (
           <>
             <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Goalkeeper Stats</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Goalkeeping</h2>
               <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl px-5">
                 <StatRow label="Games" value={gkStats.games} />
                 <StatRow label="Saves" value={gkStats.saves} />
+                <StatRow label="Saves per Game" value={gkStats.games > 0 ? gkStats.savesPerGame : "—"} />
                 <StatRow label="Goals Conceded" value={gkStats.goalsConceded} />
+                <StatRow label="Goals Conceded per Game" value={gkStats.games > 0 ? gkStats.goalsConcededPerGame : "—"} />
                 <StatRow label="Save Percentage" value={gkStats.games > 0 ? `${gkStats.savePercentage}%` : "—"} />
                 <StatRow label="Clean Sheets" value={gkStats.cleanSheets} />
-                <StatRow label="Goals Conceded per Game" value={gkStats.games > 0 ? gkStats.goalsConcededPerGame : "—"} />
+                <StatRow label="Clean Sheet Percentage" value={gkStats.games > 0 ? `${gkStats.cleanSheetPercentage}%` : "—"} />
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Results</h2>
+              <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl px-5">
                 <StatRow label="Wins" value={gkStats.wins} />
                 <StatRow label="Losses" value={gkStats.losses} />
                 <StatRow label="Draws" value={gkStats.draws} />
+                <StatRow label="Win Rate" value={gkStats.games > 0 ? `${gkStats.win_rate}%` : "—"} />
                 {gkStats.form.length > 0 && (
                   <div className="flex items-center justify-between py-3 border-b border-[#D4D3D0] dark:border-[#2a2e31] last:border-0">
                     <span className="text-gray-600 dark:text-[#9CA3AF] text-sm">Last 5 Form</span>
@@ -358,6 +363,7 @@ export default function PlayerProfile() {
                 <StatRow label="Assists" value={playerStats.assists} />
                 <StatRow label="Goal Involvements (G+A)" value={playerStats.goal_involvements} />
                 <StatRow label="Key Passes" value={playerStats.key_passes} />
+                <StatRow label="Key Passes per Game" value={playerStats.games_played > 0 ? playerStats.key_passes_per_game : "—"} />
                 <StatRow label="Goals per Game" value={playerStats.goals_per_game} />
                 {playerStats.hat_tricks > 0 && (
                   <StatRow label="Hat Tricks 🎩" value={playerStats.hat_tricks} />
@@ -390,6 +396,7 @@ export default function PlayerProfile() {
                 <StatRow label="Defensive Actions" value={playerStats.defensive_actions} />
                 <StatRow label="Tackles per Game" value={playerStats.games_played > 0 ? playerStats.tackles_per_game : "—"} />
                 <StatRow label="Interceptions per Game" value={playerStats.games_played > 0 ? playerStats.interceptions_per_game : "—"} />
+                <StatRow label="Defensive Actions per Game" value={playerStats.games_played > 0 ? playerStats.defensive_actions_per_game : "—"} />
               </div>
             </section>
 
@@ -412,7 +419,7 @@ export default function PlayerProfile() {
                 <StatRow label="Wins" value={playerStats.wins} />
                 <StatRow label="Losses" value={playerStats.losses} />
                 <StatRow label="Draws" value={playerStats.draws} />
-                <StatRow label="Win Rate" value={`${winRate}%`} />
+                <StatRow label="Win Rate" value={playerStats.games_played > 0 ? `${playerStats.win_rate}%` : "—"} />
                 {playerStats.form.length > 0 && (
                   <div className="flex items-center justify-between py-3 border-b border-[#D4D3D0] dark:border-[#2a2e31] last:border-0">
                     <span className="text-gray-600 dark:text-[#9CA3AF] text-sm">Last 5 Form</span>

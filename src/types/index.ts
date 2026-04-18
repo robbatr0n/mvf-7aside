@@ -27,6 +27,9 @@ export interface GoalkeeperStats {
   wins: number;
   losses: number;
   draws: number;
+  win_rate: number;
+  savesPerGame: number;
+  cleanSheetPercentage: number;
   form: ("W" | "L" | "D")[];
 }
 
@@ -67,6 +70,7 @@ export interface PlayerStats {
   goal_involvements: number;
   games_played: number;
   goals_per_game: number;
+  key_passes_per_game: number;
   hat_tricks: number;
   wins: number;
   losses: number;
@@ -80,4 +84,5 @@ export interface PlayerStats {
   defensive_actions: number;
   tackles_per_game: number;
   interceptions_per_game: number;
+  defensive_actions_per_game: number;
 }

@@ -20,6 +20,7 @@ export function calculatePlayerStats(
     const playerGameEntries = gamePlayers.filter(gp => gp.player_id === player.id)
     const games_played = playerGameEntries.length
     const goals_per_game = games_played > 0 ? Math.round((goals / games_played) * 100) / 100 : 0
+    const key_passes_per_game = games_played > 0 ? Math.round((key_passes / games_played) * 100) / 100 : 0
 
     const goalsByGame = new Map<string, number>()
     playerEvents
@@ -34,6 +35,7 @@ export function calculatePlayerStats(
     const defensive_actions = tackles + interceptions
     const tackles_per_game = games_played > 0 ? Math.round((tackles / games_played) * 100) / 100 : 0
     const interceptions_per_game = games_played > 0 ? Math.round((interceptions / games_played) * 100) / 100 : 0
+    const defensive_actions_per_game = games_played > 0 ? Math.round((defensive_actions / games_played) * 100) / 100 : 0
 
     let wins = 0
     let losses = 0
@@ -106,6 +108,7 @@ export function calculatePlayerStats(
         goal_involvements,
         games_played,
         goals_per_game,
+        key_passes_per_game,
         hat_tricks,
         wins,
         losses,
@@ -119,6 +122,7 @@ export function calculatePlayerStats(
         defensive_actions,
         tackles_per_game,
         interceptions_per_game,
+        defensive_actions_per_game,
     }
 }
 
