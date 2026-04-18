@@ -126,6 +126,19 @@ export function calculatePlayerStats(
     }
 }
 
+export function calculatePlayerStatsForGames(
+    player: Player,
+    gameIds: Set<string>,
+    events: Event[],
+    gamePlayers: GamePlayer[],
+    games: Game[],
+): PlayerStats {
+    const filteredEvents = events.filter(e => gameIds.has(e.game_id))
+    const filteredGamePlayers = gamePlayers.filter(gp => gameIds.has(gp.game_id))
+    const filteredGames = games.filter(g => gameIds.has(g.id))
+    return calculatePlayerStats(player, filteredEvents, filteredGames, filteredGamePlayers)
+}
+
 export function calculateAllPlayerStats(
     players: Player[],
     events: Event[],

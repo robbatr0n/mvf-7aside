@@ -9,6 +9,7 @@ import Changelog from "./pages/ChangeLog";
 import ClipManager from "./pages/ClipManager";
 import PlayerGoals from "./pages/PlayerGoals";
 import Players from "./pages/Players";
+import Compare from "./pages/Compare";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/changelog" element={<Changelog />} />
           <Route path="/player/:id/goals" element={<PlayerGoals />} />
           <Route path="/players" element={<Players />} />
+          <Route path="/compare/:id1/:id2" element={<Compare />} />
         </Route>
 
         {/* Standalone pages without nav */}

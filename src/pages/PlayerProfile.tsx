@@ -141,7 +141,7 @@ export default function PlayerProfile() {
           <Link to="/" className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors">
             ← Dashboard
           </Link>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-[#1C1C1C] dark:text-[#E5E6E3]">{player.name}</h1>
               <p className="text-gray-600 dark:text-[#9CA3AF] text-sm mt-0.5">
@@ -149,7 +149,7 @@ export default function PlayerProfile() {
                   ? `${gkStats?.games ?? 0} ${(gkStats?.games ?? 0) === 1 ? "game" : "games"} played`
                   : `${playerStats?.games_played ?? 0} ${playerStats?.games_played === 1 ? "game" : "games"} played`}
               </p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 {isInTots && (
                   <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700/50 text-yellow-700 dark:text-yellow-400 text-xs font-medium px-2.5 py-1 rounded-full">
                     ⭐ Best VII
@@ -167,6 +167,12 @@ export default function PlayerProfile() {
                 )}
               </div>
             </div>
+            <Link
+              to={`/players?compare=${id}`}
+              className="text-xs text-gray-500 dark:text-[#9CA3AF] hover:text-mvf dark:hover:text-mvf transition-colors flex-shrink-0 mt-1"
+            >
+              Compare →
+            </Link>
           </div>
         </div>
 

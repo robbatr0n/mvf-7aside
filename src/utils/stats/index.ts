@@ -1,5 +1,5 @@
 export type { GoalEntry, TeamStats, GameSummary, PlayerGameStats, TeamOfTheSeasonPlayer, TeamOfTheSeason } from './types'
-export { calculatePlayerStats, calculateAllPlayerStats, calculateLastNPlayerStats } from './playerStats'
+export { calculatePlayerStats, calculateAllPlayerStats, calculateLastNPlayerStats, calculatePlayerStatsForGames } from './playerStats'
 export { calculateGameSummaries, calculatePlayerGameBreakdown } from './gameStats'
 export { calculateGoalkeeperStats, calculateGoalkeeperGameBreakdown } from './goalkeeperStats'
 export type { GKGameBreakdown } from './goalkeeperStats'

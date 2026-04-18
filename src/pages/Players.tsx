@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { usePlayers } from "../hooks/usePlayers";
 import { useGamePlayers } from "../hooks/useGamePlayers";
 import { getAvatarColor } from "../utils/avatar";
@@ -13,6 +13,18 @@ export default function Players() {
   const { players, loading: playersLoading } = usePlayers();
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const [search, setSearch] = useState("");
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const compareId = searchParams.get("compare");
+    if (compareId) {
+      setCompareMode(true);
+      setSelectedId(compareId);
+    }
+  }, []);
 
   const loading = playersLoading || gamePlayersLoading;
   const { events } = useEvents();
@@ -43,13 +55,33 @@ export default function Players() {
           </p>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search players..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-xl px-4 py-3 text-[#1C1C1C] dark:text-[#E5E6E3] text-sm placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search players..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-xl px-4 py-3 text-[#1C1C1C] dark:text-[#E5E6E3] text-sm placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
+          />
+          <button
+            onClick={() => { setCompareMode(!compareMode); setSelectedId(null); }}
+            className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors whitespace-nowrap ${
+              compareMode
+                ? "border-mvf text-mvf bg-green-50 dark:bg-green-900/20"
+                : "border-[#D4D3D0] dark:border-[#2a2e31] text-gray-600 dark:text-[#9CA3AF] bg-[#FFFFFF] dark:bg-[#111518] hover:border-gray-400 dark:hover:border-gray-600"
+            }`}
+          >
+            Compare
+          </button>
+        </div>
+
+        {compareMode && (
+          <p className="text-xs text-gray-500 dark:text-[#9CA3AF]">
+            {selectedId
+              ? "Now tap a second player to compare."
+              : "Tap a player to start comparing."}
+          </p>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -73,14 +105,17 @@ export default function Players() {
                 .slice(0, 2)
                 .toUpperCase();
 
-              return (
-                <Link
-                  key={player.id}
-                  to={`/player/${player.id}`}
-                  className="relative bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] hover:border-mvf dark:hover:border-mvf rounded-2xl p-4 space-y-3 transition-all group"
-                >
+              const isSelected = selectedId === player.id;
+              const cardClass = `relative bg-[#FFFFFF] dark:bg-[#111518] border rounded-2xl p-4 space-y-3 transition-all group text-left w-full ${
+                isSelected
+                  ? "border-mvf"
+                  : "border-[#D4D3D0] dark:border-[#2a2e31] hover:border-mvf dark:hover:border-mvf"
+              }`;
+
+              const cardInner = (
+                <>
                   <span className="absolute top-3 right-3 text-gray-300 dark:text-gray-700 group-hover:text-mvf text-sm transition-colors">
-                    →
+                    {compareMode ? (isSelected ? "✓" : "+") : "→"}
                   </span>
 
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm ${avatarColor}`}>
@@ -113,12 +148,54 @@ export default function Players() {
                       )}
                     </div>
                   </div>
+                </>
+              );
+
+              return compareMode ? (
+                <button
+                  key={player.id}
+                  className={cardClass}
+                  onClick={() => {
+                    if (!selectedId) {
+                      setSelectedId(player.id);
+                    } else if (selectedId === player.id) {
+                      setSelectedId(null);
+                    } else {
+                      navigate(`/compare/${selectedId}/${player.id}`);
+                    }
+                  }}
+                >
+                  {cardInner}
+                </button>
+              ) : (
+                <Link
+                  key={player.id}
+                  to={`/player/${player.id}`}
+                  className={cardClass}
+                >
+                  {cardInner}
                 </Link>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Compare dismiss bar */}
+      {compareMode && selectedId && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FFFFFF] dark:bg-[#111518] border-t border-[#D4D3D0] dark:border-[#2a2e31] px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-[#1C1C1C] dark:text-[#E5E6E3]">
+            <span className="font-semibold">{players.find(p => p.id === selectedId)?.name}</span>
+            <span className="text-gray-500 dark:text-[#9CA3AF]"> selected — tap another player to compare</span>
+          </p>
+          <button
+            onClick={() => setSelectedId(null)}
+            className="text-gray-500 dark:text-[#9CA3AF] text-xs hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] transition-colors ml-4 flex-shrink-0"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
