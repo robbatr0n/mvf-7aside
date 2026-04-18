@@ -2,6 +2,21 @@ import { Link } from "react-router-dom";
 
 const CHANGELOG = [
   {
+    version: '1.9.0',
+    date: 'April 2026',
+    changes: [
+      'Added Man of the Match — the top-rated outfield player from each game, shown in game summaries, player profiles, the Team of the Week pitch and a new MOTM King award',
+      'Added runner-up display to all awards — shows names for close ties, count when more than two share the same value',
+      'Expanded leaderboard with additional stats — hat tricks, win rate and key passes per game in attacking; defensive actions per game in defending',
+      'Expanded goalkeeper leaderboard with saves per game, clean sheet percentage and win rate',
+      'Added key passes per game and defensive actions per game to player profiles',
+      'Added dedicated Results section to player profiles with win rate and MOTM count',
+      'Added MOTM and TOTW badges to player cards on the Players page',
+      'Team of the Week now defaults to the most recent game',
+      'When no goalkeeper is present in a game, the pitch shows 7 outfield players',
+    ],
+  },
+  {
     version: '1.8.0',
     date: 'April 2026',
     changes: [
