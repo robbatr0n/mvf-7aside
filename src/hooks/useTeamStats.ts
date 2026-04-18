@@ -10,6 +10,8 @@ import type {
 import {
   getTeamOfSeasonPlayerIds,
   calculateTotwAppearances,
+  calculateMotmAppearances,
+  calculateMotmByGame,
 } from "../utils/stats";
 
 export function useTeamStats(
@@ -30,5 +32,15 @@ export function useTeamStats(
     [players, events, games, gamePlayers],
   );
 
-  return { teamOfSeasonIds, totwAppearances };
+  const motmAppearances = useMemo(
+    () => calculateMotmAppearances(players, events, games, gamePlayers),
+    [players, events, games, gamePlayers],
+  );
+
+  const motmByGame = useMemo(
+    () => calculateMotmByGame(players, events, games, gamePlayers),
+    [players, events, games, gamePlayers],
+  );
+
+  return { teamOfSeasonIds, totwAppearances, motmAppearances, motmByGame };
 }

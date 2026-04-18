@@ -32,6 +32,7 @@ const STAT_GUIDE = [
   { abbr: "──", name: "", desc: "" },
   { abbr: "TOTS", name: "Best VII", desc: "The best 7 players of the season based on a composite score: goals per game (×4), assists per game (×2.5), shots on target per game (×0.5), key passes per game (×0.5), tackles per game (×1), interceptions per game (×1), win rate (×2). The goalkeeper is picked separately by best save percentage." },
   { abbr: "TOTW", name: "Team of the Week", desc: "The best 7 players from a single game using the same scoring formula applied to that game only. Shown as 🏅 ×N on player profiles and cards." },
+  { abbr: "MOTM", name: "Man of the Match", desc: "The outfield player with the highest composite rating in a single game (same formula as TOTW, goalkeepers excluded). Tiebreaker cascade: goals → assists → shots on target → tackles. Shown as 🏆 on the Team of the Week pitch and tracked across the season." },
   { abbr: "Rating", name: "Player Rating", desc: "A 0–10 rating shown on the Best VII and Team of the Week pitch graphic. Scores are calculated using the composite formula then curved using a square root scale. For Best VII ratings are based on season-long per-game averages. For Team of the Week they reflect that single game only." },
 ];
 

@@ -43,12 +43,13 @@ export default function PlayerProfile() {
   const playerStats = stats.find((s) => s.player.id === id);
   const gkStats = goalkeeperStats.find((s) => s.player.id === id);
 
-  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+  const { teamOfSeasonIds, totwAppearances, motmAppearances, motmByGame } = useTeamStats(
     stats, goalkeeperStats, players, events, games, gamePlayers,
   );
 
   const isInTots = id ? teamOfSeasonIds.has(id) : false;
   const totwCount = id ? (totwAppearances.get(id) ?? 0) : 0;
+  const motmCount = id ? (motmAppearances.get(id) ?? 0) : 0;
 
   const gameBreakdown = useMemo(() => {
     if (!id) return [];
@@ -56,8 +57,8 @@ export default function PlayerProfile() {
   }, [id, events, games, gamePlayers]);
 
   const { awards, partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players),
-    [stats, events, games, gamePlayers, players],
+    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances),
+    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances],
   );
 
   const myAwards = useMemo(() => {
@@ -151,6 +152,11 @@ export default function PlayerProfile() {
                 {totwCount > 0 && (
                   <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-[#1a1e21] border border-[#D4D3D0] dark:border-[#2a2e31] text-gray-600 dark:text-[#E5E6E3] text-xs font-medium px-2.5 py-1 rounded-full">
                     🏅 ×{totwCount} TOTW
+                  </span>
+                )}
+                {motmCount > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                    🏆 ×{motmCount} MOTM
                   </span>
                 )}
               </div>
@@ -420,6 +426,7 @@ export default function PlayerProfile() {
                 <StatRow label="Losses" value={playerStats.losses} />
                 <StatRow label="Draws" value={playerStats.draws} />
                 <StatRow label="Win Rate" value={playerStats.games_played > 0 ? `${playerStats.win_rate}%` : "—"} />
+                {motmCount > 0 && <StatRow label="Man of the Match 🏆" value={motmCount} />}
                 {playerStats.form.length > 0 && (
                   <div className="flex items-center justify-between py-3 border-b border-[#D4D3D0] dark:border-[#2a2e31] last:border-0">
                     <span className="text-gray-600 dark:text-[#9CA3AF] text-sm">Last 5 Form</span>
@@ -455,6 +462,7 @@ export default function PlayerProfile() {
                           <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">KP</th>
                           <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">TKL</th>
                           <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">INT</th>
+                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">MOTM</th>
                           <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">Result</th>
                         </tr>
                       </thead>
@@ -477,6 +485,11 @@ export default function PlayerProfile() {
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{key_passes > 0 ? key_passes : "—"}</td>
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{tackles > 0 ? tackles : "—"}</td>
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{interceptions > 0 ? interceptions : "—"}</td>
+                              <td className="text-center px-4 py-3.5">
+                                {motmByGame.get(game.id)?.id === id
+                                  ? <span className="text-amber-500">🏆</span>
+                                  : <span className="text-gray-300 dark:text-[#737373]">—</span>}
+                              </td>
                               <td className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}>{result}</td>
                             </tr>
                           );

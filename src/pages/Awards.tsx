@@ -66,7 +66,7 @@ const SECTIONS = [
   { title: 'Attacking', titles: ['Top Scorer', 'Goal Machine', 'Playmaker', 'Assist Hero', 'Most Involved', 'One Game Wonder', 'Chance Creator', 'Key Pass Hero', 'Hat Trick Hero', 'Clinical', 'Trigger Happy', 'Nearly Man', 'Swing and a Miss'] },
   { title: 'Defending', titles: ['Hardman', 'Sweeper', 'Enforcer', 'Tackle Hero', 'Interception Hero', 'Terminator', 'The Interceptor'] },
   { title: 'Goalkeepers', titles: ['The Wall', 'Stone Cold', 'Superhero'] },
-  { title: 'Consistency', titles: ['Reliable', 'Always There', 'On Fire', 'TOTW King', 'Winner', 'Unlucky', 'Hardest Worker', 'Best Partnership'] },
+  { title: 'Consistency', titles: ['Reliable', 'Always There', 'On Fire', 'TOTW King', 'MOTM King', 'Winner', 'Unlucky', 'Hardest Worker', 'Best Partnership'] },
 ]
 
 export default function Awards() {
@@ -78,13 +78,13 @@ export default function Awards() {
 
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
 
-  const { totwAppearances } = useTeamStats(
+  const { totwAppearances, motmAppearances } = useTeamStats(
     stats, goalkeeperStats, players, events, games, gamePlayers,
   );
 
   const { awards, partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances),
-    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances],
+    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances),
+    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances],
   );
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;

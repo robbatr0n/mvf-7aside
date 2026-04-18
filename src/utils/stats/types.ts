@@ -25,6 +25,7 @@ export interface GameSummary {
     totalGoals: number
     team1Stats: TeamStats
     team2Stats: TeamStats
+    motm: Player | null
 }
 
 export interface PlayerGameStats {

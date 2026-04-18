@@ -21,7 +21,7 @@ export default function Players() {
 
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
 
-  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+  const { teamOfSeasonIds, totwAppearances, motmAppearances } = useTeamStats(
     stats, goalkeeperStats, players, events, games, gamePlayers,
   );
 
@@ -104,6 +104,11 @@ export default function Players() {
                       {(totwAppearances.get(player.id) ?? 0) > 0 && (
                         <span className="inline-flex items-center gap-0.5 bg-gray-100 dark:bg-[#1a1e21] border border-[#D4D3D0] dark:border-[#2a2e31] text-gray-600 dark:text-[#E5E6E3] text-xs font-medium px-2 py-0.5 rounded-full">
                           🏅 ×{totwAppearances.get(player.id)}
+                        </span>
+                      )}
+                      {(motmAppearances.get(player.id) ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                          🏆 ×{motmAppearances.get(player.id)}
                         </span>
                       )}
                     </div>

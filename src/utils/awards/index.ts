@@ -16,6 +16,7 @@ export function calculateAwards(
     players: Player[],
     goalkeeperStats: GoalkeeperStats[] = [],
     totwAppearances: Map<string, number> = new Map(),
+    motmAppearances: Map<string, number> = new Map(),
 ): { awards: Award[]; partnership: PartnershipAward | null } {
     const eligibleStats = stats.filter(s => !s.player.exclude_from_awards)
     const qualified = eligibleStats.filter(s => s.games_played >= MIN_GAMES)
@@ -24,7 +25,7 @@ export function calculateAwards(
     const defending = buildDefendingAwards(eligibleStats, qualified, events, players)
     const goalkeeping = buildGoalkeepingAwards(goalkeeperStats, events, gamePlayers)
     const { awards: consistency, partnership } = buildConsistencyAwards(
-        eligibleStats, qualified, totwAppearances, players, events, games
+        eligibleStats, qualified, totwAppearances, motmAppearances, players, events, games
     )
 
     return {

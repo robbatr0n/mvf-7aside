@@ -218,6 +218,15 @@ export default function GameBreakdown({ summaries }: Props) {
           <p className="text-orange-500 font-semibold text-sm text-right">🟠 Bibs</p>
         </div>
 
+        {/* Man of the Match */}
+        {current.motm && (
+          <div className="px-5 py-2.5 border-b border-[#D4D3D0] dark:border-[#2a2e31] flex items-center gap-2">
+            <span className="text-sm">🏆</span>
+            <span className="text-xs text-gray-600 dark:text-[#9CA3AF] font-semibold uppercase tracking-wider">Man of the Match</span>
+            <span className="text-sm font-semibold text-[#1C1C1C] dark:text-[#E5E6E3]">{current.motm.name}</span>
+          </div>
+        )}
+
         {/* Goal lists or in progress message */}
         {isInProgress && team1Score === 0 && team2Score === 0 ? (
           <div className="px-6 py-5">

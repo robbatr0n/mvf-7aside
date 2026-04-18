@@ -6,6 +6,7 @@ export function buildConsistencyAwards(
     eligibleStats: PlayerStats[],
     qualified: PlayerStats[],
     totwAppearances: Map<string, number>,
+    motmAppearances: Map<string, number>,
     players: Player[],
     events: Event[],
     games: Game[],
@@ -83,6 +84,26 @@ export function buildConsistencyAwards(
         noWinner: totwKingWinners.length === 0,
         runnerUp: totwRunnerUps.length > 0
             ? { names: totwRunnerUps, value: `${secondTotwCount} appearance${secondTotwCount !== 1 ? 's' : ''}` }
+            : undefined,
+    }
+
+    const topMotmCount = Math.max(0, ...Array.from(motmAppearances.values()))
+    const motmKingWinners = eligibleStats
+        .filter(s => (motmAppearances.get(s.player.id) ?? 0) === topMotmCount && topMotmCount > 0)
+        .map(s => s.player.name)
+    const secondMotmCount = Math.max(0, ...Array.from(motmAppearances.values()).filter(v => v < topMotmCount))
+    const motmRunnerUps = secondMotmCount > 0
+        ? eligibleStats.filter(s => (motmAppearances.get(s.player.id) ?? 0) === secondMotmCount).map(s => s.player.name)
+        : []
+    const motmKing: Award = {
+        emoji: '🏆',
+        title: 'MOTM King',
+        description: 'Most Man of the Match awards',
+        winners: motmKingWinners,
+        value: `${topMotmCount} award${topMotmCount !== 1 ? 's' : ''}`,
+        noWinner: motmKingWinners.length === 0,
+        runnerUp: motmRunnerUps.length > 0
+            ? { names: motmRunnerUps, value: `${secondMotmCount} award${secondMotmCount !== 1 ? 's' : ''}` }
             : undefined,
     }
 
@@ -182,7 +203,7 @@ export function buildConsistencyAwards(
     }
 
     return {
-        awards: [reliable, alwaysThere, onFire, totwKing, winner, unlucky, hardestWorker],
+        awards: [reliable, alwaysThere, onFire, totwKing, motmKing, winner, unlucky, hardestWorker],
         partnership: bestPartnership,
     }
 }

@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
 
-  const { teamOfSeasonIds, totwAppearances } = useTeamStats(
+  const { teamOfSeasonIds, totwAppearances, motmAppearances } = useTeamStats(
     stats, goalkeeperStats, players, events, games, gamePlayers,
   );
 
@@ -34,8 +34,8 @@ export default function Dashboard() {
   );
 
   const { partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances),
-    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances],
+    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances),
+    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances],
   );
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;

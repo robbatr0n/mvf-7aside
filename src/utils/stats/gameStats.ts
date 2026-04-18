@@ -1,5 +1,6 @@
 import type { Event, Game, GamePlayer, Player } from '../../types'
 import type { GoalEntry, GameSummary, PlayerGameStats, TeamStats } from './types'
+import { calculateMotmForGame } from './teamOfSeason'
 
 function calcTeamStats(
     teamPlayers: Player[],
@@ -111,6 +112,7 @@ export function calculateGameSummaries(
                 totalGoals: goalEntries.length,
                 team1Stats: calcTeamStats(team1Players, gameEvents, team1Goals.length),
                 team2Stats: calcTeamStats(team2Players, gameEvents, team2Goals.length),
+                motm: calculateMotmForGame(game.id, players, events, gamePlayers),
             }
         })
 }
