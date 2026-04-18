@@ -6,8 +6,9 @@ import { useGames } from "../hooks/useGames";
 import { useGamePlayers } from "../hooks/useGamePlayers";
 import { useStats } from "../hooks/useStats";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
-import { calculatePlayerGameBreakdown } from "../utils/stats";
+import { calculatePlayerGameBreakdown, calculateGoalkeeperGameBreakdown } from "../utils/stats";
 import { calculateAwards } from "../utils/awards";
+import PlayerCharts from "../components/profile/PlayerCharts";
 import VideoModal from "../components/shared/VideoModal";
 import { useTeamStats } from "../hooks/useTeamStats";
 
@@ -55,6 +56,11 @@ export default function PlayerProfile() {
     if (!id) return [];
     return calculatePlayerGameBreakdown(id, events, games, gamePlayers);
   }, [id, events, games, gamePlayers]);
+
+  const gkBreakdown = useMemo(() => {
+    if (!id || !player?.is_goalkeeper) return [];
+    return calculateGoalkeeperGameBreakdown(id, events, games, gamePlayers);
+  }, [id, events, games, gamePlayers, player]);
 
   const { awards, partnership } = useMemo(
     () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances),
@@ -161,13 +167,6 @@ export default function PlayerProfile() {
                 )}
               </div>
             </div>
-            {myAwards.length > 0 && (
-              <div className="flex gap-1 flex-wrap justify-end max-w-xs">
-                {myAwards.map((a) => (
-                  <span key={a.title} title={a.title} className="text-xl">{a.emoji}</span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -249,6 +248,12 @@ export default function PlayerProfile() {
             )}
           </>
         )}
+
+        <PlayerCharts
+          gameBreakdown={gameBreakdown}
+          gkBreakdown={gkBreakdown}
+          isGoalkeeper={player.is_goalkeeper}
+        />
 
         {/* Goalkeeper stats */}
         {player.is_goalkeeper && gkStats ? (

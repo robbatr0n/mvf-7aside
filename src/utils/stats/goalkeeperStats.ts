@@ -1,5 +1,40 @@
 import type { Event, Game, GamePlayer, GoalkeeperStats, Player } from '../../types'
 
+export interface GKGameBreakdown {
+    game: Game
+    saves: number
+    goalsConceded: number
+    cleanSheet: boolean
+}
+
+export function calculateGoalkeeperGameBreakdown(
+    playerId: string,
+    events: Event[],
+    games: Game[],
+    gamePlayers: GamePlayer[],
+): GKGameBreakdown[] {
+    return [...games]
+        .filter(g => gamePlayers.some(gp => gp.game_id === g.id && gp.player_id === playerId))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .map(game => {
+            const keeperEntry = gamePlayers.find(gp => gp.game_id === game.id && gp.player_id === playerId)!
+            const keeperTeam = keeperEntry.team
+            const gameEvents = events.filter(e => e.game_id === game.id)
+            const opposingPlayerIds = new Set(
+                gamePlayers.filter(gp => gp.game_id === game.id && gp.team !== keeperTeam).map(gp => gp.player_id)
+            )
+            const saves = gameEvents.filter(
+                e => e.event_type === 'shot_on_target' && e.related_event_id === null && opposingPlayerIds.has(e.player_id)
+            ).length
+            const goalsConceded = gameEvents.filter(e => {
+                if (e.event_type !== 'goal') return false
+                if (e.team_override !== null) return e.team_override !== keeperTeam
+                return opposingPlayerIds.has(e.player_id)
+            }).length
+            return { game, saves, goalsConceded, cleanSheet: goalsConceded === 0 }
+        })
+}
+
 export function calculateGoalkeeperStats(
     players: Player[],
     events: Event[],
