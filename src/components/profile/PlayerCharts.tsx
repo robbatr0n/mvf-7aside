@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import {
   ComposedChart, Bar, Line, XAxis, Tooltip, ResponsiveContainer,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts'
 import type { PlayerGameStats } from '../../utils/stats'
 import type { GKGameBreakdown } from '../../utils/stats'
@@ -68,6 +69,24 @@ export default function PlayerCharts({ gameBreakdown, gkBreakdown, isGoalkeeper 
       { name: 'Defending', value: defending, color: colors.defend },
     ]
   }, [gameBreakdown, isGoalkeeper, colors.attack, colors.defend])
+
+  const radarData = useMemo(() => {
+    if (isGoalkeeper || gameBreakdown.length === 0) return []
+    const n = gameBreakdown.length
+    const avg = (key: keyof PlayerGameStats) =>
+      gameBreakdown.reduce((s, g) => s + (g[key] as number), 0) / n
+    const caps: Record<string, number> = {
+      goals: 2, assists: 1.5, shots_on_target: 3, key_passes: 3, tackles: 4, interceptions: 3,
+    }
+    const labels: Record<string, string> = {
+      goals: 'Goals', assists: 'Assists', shots_on_target: 'Shots',
+      key_passes: 'Key Passes', tackles: 'Tackles', interceptions: 'Interceptions',
+    }
+    return Object.entries(caps).map(([key, cap]) => {
+      const raw = Math.round(avg(key as keyof PlayerGameStats) * 100) / 100
+      return { axis: labels[key], value: Math.min(100, Math.round((raw / cap) * 100)), raw }
+    })
+  }, [gameBreakdown, isGoalkeeper])
 
   const chartData = isGoalkeeper ? gkData : outfieldData
 
@@ -167,6 +186,41 @@ export default function PlayerCharts({ gameBreakdown, gkBreakdown, isGoalkeeper 
             </div>
           </div>
         )}
+        {/* Radar chart — outfield only */}
+        {!isGoalkeeper && radarData.length > 0 && (
+          <div>
+            <p className="text-xs text-gray-500 dark:text-[#9CA3AF] mb-1">Player profile</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                <PolarGrid stroke={colors.grid} />
+                <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: colors.muted }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar
+                  dataKey="value"
+                  stroke={colors.line}
+                  fill={colors.bar}
+                  fillOpacity={0.55}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload
+                    return (
+                      <div
+                        style={{ background: colors.tooltipBg, border: `1px solid ${colors.tooltipBorder}` }}
+                        className="rounded-xl px-3 py-2 text-xs shadow-md"
+                      >
+                        <p style={{ color: colors.muted }}>{d.axis}</p>
+                        <p style={{ color: colors.tooltipText }}>{d.raw}/game</p>
+                      </div>
+                    )
+                  }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
       </div>
     </section>
   )
