@@ -9,7 +9,8 @@ import { calculateAwards } from "../utils/awards";
 import AwardCards from "../components/dashboard/AwardCards";
 import Leaderboard from "../components/dashboard/Leaderboard";
 import GameBreakdown from "../components/dashboard/GameBreakdown";
-import InfoBar from "../components/dashboard/InfoBar";
+import DashboardFooter from "../components/dashboard/DashboardFooter";
+import LatestGameCard from "../components/dashboard/LatestGameCard";
 import GoalkeeperLeaderboard from "../components/dashboard/GoalkeeperLeaderboard";
 import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import TeamOfTheSeason from "../components/dashboard/TeamOfTheSeason";
@@ -51,7 +52,12 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <InfoBar games={games} />
+            <LatestGameCard
+              games={games}
+              events={events}
+              gamePlayers={gamePlayers}
+              players={players}
+            />
             <AwardCards stats={stats} partnership={partnership} />
             <Leaderboard
               stats={stats}
@@ -73,7 +79,10 @@ export default function Dashboard() {
               games={games}
               gamePlayers={gamePlayers}
             />
-            <GameBreakdown summaries={gameSummaries} />
+            <div id="game-breakdown">
+              <GameBreakdown summaries={gameSummaries} events={events} />
+            </div>
+            <DashboardFooter games={games} />
           </>
         )}
       </div>

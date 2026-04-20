@@ -1,10 +1,24 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { GameSummary, GoalEntry, TeamStats } from "../../utils/stats";
+import type { Event, Player } from "../../types";
 
 interface Props {
   summaries: GameSummary[];
+  events: Event[];
 }
+
+// ── Rating helpers ────────────────────────────────────────────────────────────
+
+const TOTW_CAP = 50;
+
+function toRating(score: number): number {
+  const normalised = Math.min(score / TOTW_CAP, 1);
+  const curved = Math.sqrt(normalised);
+  return Math.min(10, Math.round(curved * 10 * 10) / 10);
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function GoalList({
   goals,
@@ -135,7 +149,90 @@ function TeamStatsPanel({
   );
 }
 
-export default function GameBreakdown({ summaries }: Props) {
+function PlayerRatingsPanel({
+  gameId,
+  team1Players,
+  team2Players,
+  events,
+}: {
+  gameId: string;
+  team1Players: Player[];
+  team2Players: Player[];
+  events: Event[];
+}) {
+  const gameEvents = events.filter((e) => e.game_id === gameId);
+
+  function score(player: Player) {
+    const pe = gameEvents.filter((e) => e.player_id === player.id);
+    const goals = pe.filter((e) => e.event_type === "goal").length;
+    const assists = pe.filter((e) => e.event_type === "assist").length;
+    const sot = pe.filter((e) => e.event_type === "shot_on_target").length;
+    const kp = pe.filter((e) => e.event_type === "key_pass").length;
+    const tackles = pe.filter((e) => e.event_type === "tackle").length;
+    const interceptions = pe.filter((e) => e.event_type === "interception").length;
+    return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles + interceptions;
+  }
+
+  const allPlayers = [
+    ...team1Players.map((p) => ({ player: p, team: 1 as const })),
+    ...team2Players.map((p) => ({ player: p, team: 2 as const })),
+  ];
+
+  const outfield = allPlayers
+    .filter(({ player }) => !player.is_goalkeeper)
+    .map(({ player, team }) => ({ player, team, s: score(player), rating: toRating(score(player)) }))
+    .sort((a, b) => b.s - a.s);
+
+  const keepers = allPlayers
+    .filter(({ player }) => player.is_goalkeeper)
+    .map(({ player, team }) => ({ player, team, s: 0, rating: 0 }));
+
+  const ranked = [...outfield, ...keepers];
+
+  if (ranked.length === 0) return null;
+
+  return (
+    <div className="border-t border-[#D4D3D0] dark:border-[#2a2e31] px-5 py-5 space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF] text-center">
+        Player Ratings
+      </p>
+      <div className="space-y-1.5">
+        {ranked.map(({ player, team, rating }) => (
+          <div key={player.id} className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${team === 1 ? "bg-[#1C1C1C] dark:bg-[#E5E6E3]" : "bg-orange-500"}`}
+              />
+              {player.is_guest || player.is_goalkeeper ? (
+                <span className={`text-sm font-medium truncate ${player.is_goalkeeper ? "text-[#d4a017]" : "text-[#1C1C1C] dark:text-[#E5E6E3]"}`}>
+                  {player.is_guest ? "Guest" : player.name}
+                </span>
+              ) : (
+                <Link
+                  to={`/player/${player.id}`}
+                  className="text-sm font-medium truncate text-[#1C1C1C] dark:text-[#E5E6E3] hover:text-mvf transition-colors"
+                >
+                  {player.name}
+                </Link>
+              )}
+            </div>
+            {player.is_goalkeeper ? (
+              <span className="text-[#d4a017] text-sm shrink-0">GK</span>
+            ) : (
+              <span className="text-gray-600 dark:text-[#9CA3AF] text-sm tabular-nums shrink-0">
+                {rating.toFixed(1)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export default function GameBreakdown({ summaries, events }: Props) {
   const [index, setIndex] = useState(0);
 
   if (summaries.length === 0) return null;
@@ -222,7 +319,7 @@ export default function GameBreakdown({ summaries }: Props) {
         {current.motm && (
           <div className="px-5 py-2.5 border-b border-[#D4D3D0] dark:border-[#2a2e31] flex items-center gap-2">
             <span className="text-sm">🏆</span>
-            <span className="text-xs text-gray-600 dark:text-[#9CA3AF] font-semibold uppercase tracking-wider">Man of the Match</span>
+            <span className="text-xs text-gray-600 dark:text-[#9CA3AF] font-semibold uppercase tracking-widest">Man of the Match</span>
             <span className="text-sm font-semibold text-[#1C1C1C] dark:text-[#E5E6E3]">{current.motm.name}</span>
           </div>
         )}
@@ -240,6 +337,14 @@ export default function GameBreakdown({ summaries }: Props) {
             <GoalList goals={current.team2Goals} align="right" />
           </div>
         )}
+
+        {/* Player ratings */}
+        <PlayerRatingsPanel
+          gameId={current.game.id}
+          team1Players={current.team1Players}
+          team2Players={current.team2Players}
+          events={events}
+        />
 
         {/* Team stats */}
         <TeamStatsPanel
@@ -261,8 +366,8 @@ export default function GameBreakdown({ summaries }: Props) {
                 >
                   <span
                     className={`block rounded-full transition-all ${reversedIndex === index
-                        ? "bg-mvf w-4 h-1.5"
-                        : "bg-gray-200 dark:bg-gray-700 w-1.5 h-1.5"
+                      ? "bg-mvf w-4 h-1.5"
+                      : "bg-gray-200 dark:bg-gray-700 w-1.5 h-1.5"
                       }`}
                   />
                 </button>
