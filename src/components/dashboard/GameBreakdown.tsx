@@ -52,7 +52,7 @@ function GoalList({
                 className="text-gray-600 dark:text-[#9CA3AF] text-xs ml-1.5"
                 title="Scored after switching teams"
               >
-                ↔
+                (OG)
               </span>
             )}
           </span>
