@@ -4,7 +4,7 @@ import type { TeamOfTheSeason } from './types'
 export function calculateTeamOfTheSeason(
     stats: PlayerStats[],
     goalkeeperStats: GoalkeeperStats[],
-    minGames: number = 3,
+    minGames: number = 5,
 ): TeamOfTheSeason {
     const bestKeeper =
         goalkeeperStats.sort((a, b) => b.savePercentage - a.savePercentage)[0] ?? null
