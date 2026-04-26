@@ -22,7 +22,11 @@ function compositeScore(pe: Event[]): number {
   const kp = pe.filter(e => e.event_type === 'key_pass').length
   const tackles = pe.filter(e => e.event_type === 'tackle').length
   const interceptions = pe.filter(e => e.event_type === 'interception').length
-  return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles * 1 + interceptions * 1
+  const passCompleted = pe.filter(e => e.event_type === 'pass_completed').length
+  const hasPassingEvents = pe.some(
+    e => e.event_type === 'pass_completed' || e.event_type === 'pass_received' || e.event_type === 'pass_failed'
+  )
+  return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles * 1 + interceptions * 1 + (hasPassingEvents ? passCompleted * 0.2 : 0)
 }
 
 function displayName(p: Player): string {

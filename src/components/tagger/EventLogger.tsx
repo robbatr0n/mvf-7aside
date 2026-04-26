@@ -15,14 +15,17 @@ type FlowType =
   | "shot_on_target"
   | "shot_off_target"
   | "tackle"
-  | "interception";
-type FlowStep = "scorer" | "assister" | "shooter" | "keypasser";
+  | "interception"
+  | "pass"
+  | "pass_failed";
+type FlowStep = "scorer" | "assister" | "shooter" | "keypasser" | "passer" | "receiver";
 
 interface PendingFlow {
   type: FlowType;
   step: FlowStep;
   firstPlayerId: string | null;
   goalEventId?: string;
+  chained?: boolean;
 }
 
 export default function EventLogger({
@@ -59,7 +62,10 @@ export default function EventLogger({
   }
 
   function startFlow(type: FlowType) {
-    const step: FlowStep = type === "goal" ? "scorer" : "shooter";
+    const step: FlowStep =
+      type === "goal" ? "scorer"
+      : type === "pass" || type === "pass_failed" ? "passer"
+      : "shooter";
     setFlow({ type, step, firstPlayerId: null });
   }
 
@@ -94,6 +100,31 @@ export default function EventLogger({
       return;
     }
 
+    // Pass failed flow — single step: passer selected
+    if (flow.type === "pass_failed" && flow.step === "passer") {
+      await createEvent(game.id, player.id, "pass_failed");
+      flashAction(`❌ ${player.name} (pass incomplete)`);
+      setFlow(null);
+      return;
+    }
+
+    // Pass flow — step 1: passer selected
+    if (flow.type === "pass" && flow.step === "passer") {
+      setFlow({ ...flow, step: "receiver", firstPlayerId: player.id });
+      return;
+    }
+
+    // Pass flow — step 2: receiver selected → chain to next pass
+    if (flow.type === "pass" && flow.step === "receiver") {
+      const passEvent = await createEvent(game.id, flow.firstPlayerId!, "pass_completed");
+      if (!passEvent) return;
+      await createEvent(game.id, player.id, "pass_received", passEvent.id);
+      const passer = activePlayers.find((p) => p.id === flow.firstPlayerId);
+      flashAction(`🔵 ${passer?.name} → ${player.name}`);
+      setFlow({ type: "pass", step: "receiver", firstPlayerId: player.id, chained: true });
+      return;
+    }
+
     // Shot flow — step 1: shooter selected
     if (flow.step === "shooter") {
       if (flow.type === "tackle" || flow.type === "interception") {
@@ -102,7 +133,8 @@ export default function EventLogger({
         setFlow(null);
         return;
       }
-      const shotEvent = await createEvent(game.id, player.id, flow.type);
+      const shotType = flow.type as "shot_on_target" | "shot_off_target";
+      const shotEvent = await createEvent(game.id, player.id, shotType);
       if (!shotEvent) return;
       setFlow({
         ...flow,
@@ -143,6 +175,14 @@ export default function EventLogger({
       setFlow(null);
       return;
     }
+
+    if (flow.type === "pass" && flow.step === "receiver") {
+      const passer = activePlayers.find((p) => p.id === flow.firstPlayerId);
+      await createEvent(game.id, flow.firstPlayerId!, "pass_failed");
+      flashAction(`❌ ${passer?.name} (pass incomplete)`);
+      setFlow(null);
+      return;
+    }
   }
   const promptText = (() => {
     if (!flow) return null;
@@ -158,12 +198,21 @@ export default function EventLogger({
       const shooter = activePlayers.find((p) => p.id === flow.firstPlayerId);
       return `${flow.type === "shot_on_target" ? "🟢" : "🔴"} ${shooter?.name} — who played the key pass?`;
     }
+    if (flow.type === "pass_failed" && flow.step === "passer") return "❌ Failed pass — who lost it?";
+    if (flow.type === "pass" && flow.step === "passer") return "🔵 Pass — who passed?";
+    if (flow.type === "pass" && flow.step === "receiver") {
+      const passer = activePlayers.find((p) => p.id === flow.firstPlayerId);
+      return flow.chained
+        ? `🔵 ${passer?.name} — who received? ↩ chaining`
+        : `🔵 ${passer?.name} — who received?`;
+    }
   })();
 
   const skipLabel = (() => {
     if (!flow) return null;
     if (flow.step === "assister") return "No assist";
     if (flow.step === "keypasser") return "No key pass";
+    if (flow.step === "receiver") return "Incomplete";
     return null;
   })();
 
@@ -180,9 +229,23 @@ export default function EventLogger({
     return { t1, t2 };
   }, [gameEvents, team1, team2]);
 
+  const recentPlayers = useMemo(() => {
+    const seen = new Set<string>();
+    const result: Player[] = [];
+    for (let i = gameEvents.length - 1; i >= 0 && result.length < 5; i--) {
+      const pid = gameEvents[i].player_id;
+      if (!seen.has(pid)) {
+        seen.add(pid);
+        const p = activePlayers.find((p) => p.id === pid);
+        if (p) result.push(p);
+      }
+    }
+    return result;
+  }, [gameEvents, activePlayers]);
+
   // Which players to exclude from selection (can't assist own goal, can't key pass own shot)
   const excludeId =
-    flow?.step === "assister" || flow?.step === "keypasser"
+    flow?.step === "assister" || flow?.step === "keypasser" || flow?.step === "receiver"
       ? flow.firstPlayerId
       : null;
 
@@ -267,9 +330,21 @@ export default function EventLogger({
             </button>
             <button
               onClick={() => startFlow("interception")}
-              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors col-span-2"
+              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors"
             >
               ✋ Interception
+            </button>
+            <button
+              onClick={() => startFlow("pass")}
+              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors"
+            >
+              🔵 Pass
+            </button>
+            <button
+              onClick={() => startFlow("pass_failed")}
+              className="bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-4 font-medium transition-colors"
+            >
+              ✗ Failed Pass
             </button>
           </div>
         )}
@@ -296,7 +371,7 @@ export default function EventLogger({
                 onClick={cancel}
                 className="text-gray-600 hover:text-gray-400 text-sm transition-colors"
               >
-                Cancel
+                {flow?.chained ? "End sequence" : "Cancel"}
               </button>
             </div>
           </div>
@@ -306,6 +381,26 @@ export default function EventLogger({
         {!flow && lastAction && (
           <div className="bg-green-900/20 border border-green-800/30 rounded-xl px-4 py-2.5">
             <p className="text-green-400 text-sm">{lastAction}</p>
+          </div>
+        )}
+
+        {/* Recent players strip */}
+        {flow && recentPlayers.filter((p) => p.id !== excludeId).length > 0 && (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1.5">Recent</p>
+            <div className="flex flex-wrap gap-1.5">
+              {recentPlayers
+                .filter((p) => p.id !== excludeId)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePlayerSelect(p)}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-700 hover:bg-blue-600 text-white transition-all"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+            </div>
           </div>
         )}
 

@@ -5,7 +5,10 @@ export type EventType =
   | "shot_off_target"
   | "key_pass"
   | "tackle"
-  | "interception";
+  | "interception"
+  | "pass_completed"
+  | "pass_received"
+  | "pass_failed";
 
 export interface Player {
   id: string;
@@ -85,4 +88,10 @@ export interface PlayerStats {
   tackles_per_game: number;
   interceptions_per_game: number;
   defensive_actions_per_game: number;
+  passes_completed: number;
+  passes_failed: number;
+  pass_attempts: number;
+  pass_accuracy: number;
+  passes_per_game: number;
+  games_with_passing: number;
 }

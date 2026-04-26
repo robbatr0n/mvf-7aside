@@ -21,6 +21,7 @@ const STAT_GUIDE = [
   { abbr: "TKL/G", name: "Tackles per Game", desc: "Average tackles per game played" },
   { abbr: "INT/G", name: "Interceptions per Game", desc: "Average interceptions per game played" },
   { abbr: "DA/G", name: "Defensive Actions per Game", desc: "Average tackles + interceptions per game played" },
+  { abbr: "PC", name: "Passes Completed", desc: "Successful passes completed. Contributes to composite score at ×0.2 — 5 completed passes equals roughly one tackle in scoring terms. Only counted in games where passing was tracked. Pass accuracy is implicitly reflected since completing more passes naturally scores higher." },
   { abbr: "──", name: "", desc: "" },
   { abbr: "SV", name: "Saves", desc: "Shots on target from the opposing team that were not goals — derived automatically from unlinked shots on target" },
   { abbr: "SV/G", name: "Saves per Game", desc: "Average saves per game played" },
@@ -30,10 +31,10 @@ const STAT_GUIDE = [
   { abbr: "CS%", name: "Clean Sheet Percentage", desc: "Percentage of games played where the goalkeeper kept a clean sheet" },
   { abbr: "GC/G", name: "Goals Conceded per Game", desc: "Average goals conceded per game played" },
   { abbr: "──", name: "", desc: "" },
-  { abbr: "TOTS", name: "Best VII", desc: "The best 7 players of the season based on a composite score: goals per game (×4), assists per game (×2.5), shots on target per game (×0.5), key passes per game (×0.5), tackles per game (×1), interceptions per game (×1), win rate (×2). The goalkeeper is picked separately by best save percentage." },
-  { abbr: "TOTW", name: "Team of the Week", desc: "The best 7 players from a single game using the same scoring formula applied to that game only. Shown as 🏅 ×N on player profiles and cards." },
-  { abbr: "MOTM", name: "Man of the Match", desc: "The outfield player with the highest composite rating in a single game (same formula as TOTW, goalkeepers excluded). Tiebreaker cascade: goals → assists → shots on target → tackles. Shown as 🏆 on the Team of the Week pitch and tracked across the season." },
-  { abbr: "Rating", name: "Player Rating", desc: "A 0–10 rating shown on the Best VII and Team of the Week pitch graphic. Scores are calculated using the composite formula then curved using a square root scale. For Best VII ratings are based on season-long per-game averages. For Team of the Week they reflect that single game only." },
+  { abbr: "TOTS", name: "Best VII", desc: "The best 7 players of the season based on a composite score: goals per game (×4), assists per game (×2.5), shots on target per game (×0.5), key passes per game (×0.5), tackles per game (×1), interceptions per game (×1), win rate (×2), passes completed per tracked game (×0.2). Pass contribution is only averaged over games where passing was tagged, not all games played. The goalkeeper is picked separately by best save percentage." },
+  { abbr: "TOTW", name: "Team of the Week", desc: "The best 7 players from a single game using the same scoring formula applied to that game only. Passes completed (×0.2) are included only if passing was tracked in that game. Shown as 🏅 ×N on player profiles and cards." },
+  { abbr: "MOTM", name: "Man of the Match", desc: "The outfield player with the highest composite rating in a single game (same formula as TOTW, goalkeepers excluded). Passes completed (×0.2) are included only if passing was tracked in that game. Tiebreaker cascade: goals → assists → shots on target → tackles. Shown as 🏆 on the Team of the Week pitch and tracked across the season." },
+  { abbr: "Rating", name: "Player Rating", desc: "A 0–10 rating shown on the Best VII and Team of the Week pitch graphic. Scores are calculated using the composite formula (including passes completed ×0.2 where tracked) then curved using a square root scale. For Best VII ratings are based on season-long per-game averages. For Team of the Week they reflect that single game only." },
 ];
 
 interface Props {

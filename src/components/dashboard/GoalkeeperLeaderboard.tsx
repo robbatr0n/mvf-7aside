@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { GoalkeeperStats } from "../../types";
 
@@ -62,22 +62,46 @@ function Tooltip({
 }
 
 const HEADERS = [
-  { label: "GP", tooltip: "Games Played" },
-  { label: "SV", tooltip: "Saves" },
-  { label: "SV/G", tooltip: "Saves per Game" },
-  { label: "GC", tooltip: "Goals Conceded" },
-  { label: "SV%", tooltip: "Save Percentage" },
-  { label: "CS", tooltip: "Clean Sheets" },
-  { label: "CS%", tooltip: "Clean Sheet Percentage" },
-  { label: "GC/G", tooltip: "Goals Conceded per Game" },
-  { label: "Win%", tooltip: "Win Rate" },
-  { label: "Form", tooltip: "Last 5 results" },
+  { key: "games", label: "GP", tooltip: "Games Played" },
+  { key: "saves", label: "SV", tooltip: "Saves" },
+  { key: "savesPerGame", label: "SV/G", tooltip: "Saves per Game" },
+  { key: "goalsConceded", label: "GC", tooltip: "Goals Conceded", lowerIsBetter: true },
+  { key: "savePercentage", label: "SV%", tooltip: "Save Percentage" },
+  { key: "cleanSheets", label: "CS", tooltip: "Clean Sheets" },
+  { key: "cleanSheetPercentage", label: "CS%", tooltip: "Clean Sheet Percentage" },
+  { key: "goalsConcededPerGame", label: "GC/G", tooltip: "Goals Conceded per Game", lowerIsBetter: true },
+  { key: "win_rate", label: "Win%", tooltip: "Win Rate" },
 ];
 
 export default function GoalkeeperLeaderboard({
   stats,
   teamOfSeasonIds,
 }: Props) {
+  const [sortKey, setSortKey] = useState<string>("saves");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleSort(key: string) {
+    const header = HEADERS.find(h => h.key === key);
+    if (key === sortKey) {
+      setSortDir(d => d === "desc" ? "asc" : "desc");
+    } else {
+      setSortKey(key);
+      setSortDir(header?.lowerIsBetter ? "asc" : "desc");
+    }
+  }
+
+  const sortedStats = useMemo(() => {
+    return [...stats].sort((a, b) => {
+      if (sortKey === "name") {
+        const cmp = a.player.name.localeCompare(b.player.name);
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+      const aVal = (a[sortKey as keyof GoalkeeperStats] as number) ?? 0;
+      const bVal = (b[sortKey as keyof GoalkeeperStats] as number) ?? 0;
+      return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+    });
+  }, [stats, sortKey, sortDir]);
+
   if (stats.length === 0) return null;
 
   return (
@@ -93,21 +117,28 @@ export default function GoalkeeperLeaderboard({
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#FFFFFF] dark:bg-[#111518]">
-                <th className="text-left px-5 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider w-px whitespace-nowrap">
+                <th
+                  onClick={() => handleSort("name")}
+                  className={`text-left px-5 py-3 font-semibold text-xs uppercase tracking-wider w-px whitespace-nowrap cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${sortKey === "name" ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
+                >
                   Player
                 </th>
                 {HEADERS.map((h, hi) => (
                   <th
-                    key={h.label}
-                    className={`text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider border-l border-[#D4D3D0] dark:border-[#2a2e31] ${hi % 2 === 1 ? "bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]" : ""}`}
+                    key={h.key}
+                    onClick={() => handleSort(h.key)}
+                    className={`text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider border-l border-[#D4D3D0] dark:border-[#2a2e31] cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${hi % 2 === 1 ? "bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]" : ""} ${sortKey === h.key ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
                   >
                     <Tooltip text={h.tooltip}>{h.label}</Tooltip>
                   </th>
                 ))}
+                <th className={`text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider border-l border-[#D4D3D0] dark:border-[#2a2e31] ${HEADERS.length % 2 === 1 ? "bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]" : ""}`}>
+                  Form
+                </th>
               </tr>
             </thead>
             <tbody>
-              {stats.map((s, i) => (
+              {sortedStats.map((s, i) => (
                 <tr
                   key={s.player.id}
                   className={`transition-colors hover:bg-[#F5F4F2] dark:hover:bg-[#1a1e21]/40 ${i === 0 ? "border-l-2 border-l-mvf" : ""}`}

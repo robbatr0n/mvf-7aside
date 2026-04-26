@@ -41,7 +41,7 @@ export function calculateGoalkeeperStats(
     games: Game[],
     gamePlayers: GamePlayer[],
 ): GoalkeeperStats[] {
-    const goalkeepers = players.filter(p => p.is_goalkeeper && !p.is_guest)
+    const goalkeepers = players.filter(p => p.is_goalkeeper && !p.is_guest && !p.exclude_from_awards)
 
     return goalkeepers
         .map(keeper => {

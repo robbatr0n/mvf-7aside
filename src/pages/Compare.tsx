@@ -31,15 +31,18 @@ function VersusRow({
   const bBarW = equal ? 50 : bWins ? 100 : Math.round((bVal / max) * 100)
   const muted = isDark ? '#374151' : '#D1D5DB'
   const green = '#16a34a'
+  const textMain = isDark ? '#E5E6E3' : '#1C1C1C'
 
   return (
     <div className="py-3 border-b border-[#D4D3D0] dark:border-[#2a2e31] last:border-0">
       <div className="flex items-center mb-1.5">
-        <span className={`text-sm font-semibold w-12 text-left tabular-nums ${aWins ? 'text-mvf' : 'text-[#1C1C1C] dark:text-[#E5E6E3]'}`}>
+        <span className="text-sm font-semibold w-12 text-left tabular-nums"
+          style={{ color: aWins ? green : textMain }}>
           {aDisplay ?? aVal}
         </span>
         <span className="text-gray-500 dark:text-[#9CA3AF] text-xs text-center flex-1">{label}</span>
-        <span className={`text-sm font-semibold w-12 text-right tabular-nums ${bWins ? 'text-mvf' : 'text-[#1C1C1C] dark:text-[#E5E6E3]'}`}>
+        <span className="text-sm font-semibold w-12 text-right tabular-nums"
+          style={{ color: bWins ? green : textMain }}>
           {bDisplay ?? bVal}
         </span>
       </div>
@@ -228,6 +231,56 @@ export default function Compare() {
             </section>
 
             <section className="space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Shooting</h2>
+              <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl px-5">
+                <VersusRow
+                  label="Total Shots"
+                  aVal={p1Stats.shots_on_target + p1Stats.shots_off_target}
+                  bVal={p2Stats.shots_on_target + p2Stats.shots_off_target}
+                />
+                <VersusRow
+                  label="Shot Accuracy"
+                  aVal={p1Stats.shot_accuracy}
+                  bVal={p2Stats.shot_accuracy}
+                  aDisplay={p1Stats.shots_on_target + p1Stats.shots_off_target > 0 ? `${p1Stats.shot_accuracy}%` : '—'}
+                  bDisplay={p2Stats.shots_on_target + p2Stats.shots_off_target > 0 ? `${p2Stats.shot_accuracy}%` : '—'}
+                />
+                <VersusRow
+                  label="Shot Conversion"
+                  aVal={p1Stats.shot_conversion}
+                  bVal={p2Stats.shot_conversion}
+                  aDisplay={p1Stats.shots_on_target + p1Stats.shots_off_target > 0 ? `${p1Stats.shot_conversion}%` : '—'}
+                  bDisplay={p2Stats.shots_on_target + p2Stats.shots_off_target > 0 ? `${p2Stats.shot_conversion}%` : '—'}
+                />
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Passing</h2>
+              <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl px-5">
+                <VersusRow
+                  label="Passes Completed"
+                  aVal={p1Stats.passes_completed}
+                  bVal={p2Stats.passes_completed}
+                />
+                <VersusRow
+                  label="Pass Accuracy"
+                  aVal={p1Stats.pass_accuracy}
+                  bVal={p2Stats.pass_accuracy}
+                  aDisplay={p1Stats.pass_attempts > 0 ? `${p1Stats.pass_accuracy}%` : '—'}
+                  bDisplay={p2Stats.pass_attempts > 0 ? `${p2Stats.pass_accuracy}%` : '—'}
+                />
+                <VersusRow
+                  label="Passes per Game"
+                  aVal={p1Stats.passes_per_game}
+                  bVal={p2Stats.passes_per_game}
+                  aDisplay={p1Stats.pass_attempts > 0 ? String(p1Stats.passes_per_game) : '—'}
+                  bDisplay={p2Stats.pass_attempts > 0 ? String(p2Stats.passes_per_game) : '—'}
+                />
+              </div>
+            </section>
+
+            <section className="space-y-2">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Results</h2>
               <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl px-5">
                 <VersusRow
@@ -309,6 +362,13 @@ export default function Compare() {
               <VersusRow label="Goals per Game" aVal={h2hStats1.goals_per_game} bVal={h2hStats2.goals_per_game} />
               <VersusRow label="Goal Involvements" aVal={h2hStats1.goal_involvements} bVal={h2hStats2.goal_involvements} />
               <VersusRow label="Def. Actions per Game" aVal={h2hStats1.defensive_actions_per_game} bVal={h2hStats2.defensive_actions_per_game} />
+              <VersusRow
+                label="Pass Accuracy"
+                aVal={h2hStats1.pass_accuracy}
+                bVal={h2hStats2.pass_accuracy}
+                aDisplay={h2hStats1.pass_attempts > 0 ? `${h2hStats1.pass_accuracy}%` : '—'}
+                bDisplay={h2hStats2.pass_attempts > 0 ? `${h2hStats2.pass_accuracy}%` : '—'}
+              />
               <VersusRow
                 label="Win Rate"
                 aVal={h2hStats1.win_rate}

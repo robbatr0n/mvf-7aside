@@ -4,14 +4,18 @@ import type { EventType } from '../../types'
 export const MIN_GAMES = 3
 export const MIN_SHOTS = 5
 
-export function topN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
+type NumericStatKey = {
+    [K in keyof PlayerStats]: PlayerStats[K] extends number ? K : never
+}[keyof PlayerStats]
+
+export function topN(stats: PlayerStats[], key: NumericStatKey): PlayerStats[] {
     const sorted = [...stats].sort((a, b) => (b[key] as number) - (a[key] as number))
     const best = sorted[0]?.[key]
     if (best === undefined || best === 0) return []
     return sorted.filter(s => s[key] === best)
 }
 
-export function runnerUpN(stats: PlayerStats[], key: keyof PlayerStats): PlayerStats[] {
+export function runnerUpN(stats: PlayerStats[], key: NumericStatKey): PlayerStats[] {
     const sorted = [...stats].sort((a, b) => (b[key] as number) - (a[key] as number))
     const best = sorted[0]?.[key] as number
     if (best === undefined || best === 0) return []

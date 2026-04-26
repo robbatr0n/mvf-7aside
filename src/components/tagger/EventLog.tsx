@@ -14,6 +14,9 @@ const EVENT_LABELS: Record<EventType, string> = {
   key_pass: "🔑 Key pass",
   tackle: "Tackle",
   interception: "Interception",
+  pass_completed: "🔵 Pass completed",
+  pass_received: "🔵 Pass received",
+  pass_failed: "❌ Pass failed",
 };
 
 export default function EventLog({ events, players, onUndo }: Props) {

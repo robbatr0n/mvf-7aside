@@ -18,6 +18,10 @@ export function calculateTeamOfTheSeason(
             const kpPerGame = s.games_played > 0 ? s.key_passes / s.games_played : 0
             const winRate = s.games_played > 0 ? s.wins / s.games_played : 0
 
+            const passScore = s.games_with_passing > 0
+                ? (s.passes_completed / s.games_with_passing) * 0.2
+                : 0
+
             const score =
                 s.goals_per_game * 4 +
                 assistsPerGame * 2.5 +
@@ -25,7 +29,8 @@ export function calculateTeamOfTheSeason(
                 kpPerGame * 0.5 +
                 s.tackles_per_game * 1 +
                 s.interceptions_per_game * 1 +
-                winRate * 2
+                winRate * 2 +
+                passScore
 
             return {
                 player: s.player,
@@ -69,6 +74,10 @@ export function calculateTeamOfTheWeek(
             const kp = playerEvents.filter(e => e.event_type === 'key_pass').length
             const tackles = playerEvents.filter(e => e.event_type === 'tackle').length
             const interceptions = playerEvents.filter(e => e.event_type === 'interception').length
+            const passCompleted = playerEvents.filter(e => e.event_type === 'pass_completed').length
+            const hasPassingEvents = playerEvents.some(
+                e => e.event_type === 'pass_completed' || e.event_type === 'pass_received' || e.event_type === 'pass_failed'
+            )
 
             const score =
                 goals * 4 +
@@ -76,7 +85,8 @@ export function calculateTeamOfTheWeek(
                 sot * 0.5 +
                 kp * 0.5 +
                 tackles * 1 +
-                interceptions * 1
+                interceptions * 1 +
+                (hasPassingEvents ? passCompleted * 0.2 : 0)
 
             return {
                 player,
@@ -141,8 +151,19 @@ export function calculateMotmForGame(
         const kp = playerEvents.filter(e => e.event_type === 'key_pass').length
         const tackles = playerEvents.filter(e => e.event_type === 'tackle').length
         const interceptions = playerEvents.filter(e => e.event_type === 'interception').length
+        const passCompleted = playerEvents.filter(e => e.event_type === 'pass_completed').length
+        const hasPassingEvents = playerEvents.some(
+            e => e.event_type === 'pass_completed' || e.event_type === 'pass_received' || e.event_type === 'pass_failed'
+        )
 
-        const score = goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles * 1 + interceptions * 1
+        const score =
+            goals * 4 +
+            assists * 2.5 +
+            sot * 0.5 +
+            kp * 0.5 +
+            tackles * 1 +
+            interceptions * 1 +
+            (hasPassingEvents ? passCompleted * 0.2 : 0)
 
         return { player, score, goals, assists, sot, tackles }
     })

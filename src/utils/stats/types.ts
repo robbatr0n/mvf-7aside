@@ -14,6 +14,8 @@ export interface TeamStats {
     keyPasses: number
     tackles: number
     interceptions: number
+    passesCompleted: number
+    passAccuracy: number
 }
 
 export interface GameSummary {
@@ -38,6 +40,9 @@ export interface PlayerGameStats {
     goal_involvements: number
     tackles: number
     interceptions: number
+    passes_completed: number
+    passes_failed: number
+    pass_accuracy: number
 }
 
 export interface TeamOfTheSeasonPlayer {

@@ -9,6 +9,7 @@ import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import { calculatePlayerGameBreakdown, calculateGoalkeeperGameBreakdown } from "../utils/stats";
 import { calculateAwards } from "../utils/awards";
 import PlayerCharts from "../components/profile/PlayerCharts";
+import PassingHub from "../components/profile/PassingHub";
 import VideoModal from "../components/shared/VideoModal";
 import { useTeamStats } from "../hooks/useTeamStats";
 
@@ -82,12 +83,195 @@ export default function PlayerProfile() {
     return all.filter((a) => !a.noWinner && a.winners.includes(player?.name ?? ""));
   }, [awards, partnership, player]);
 
+  const tierStyles = {
+    gold: {
+      card: "bg-gradient-to-br from-[#2a2000] via-[#1a1500] to-[#221a00] border-[rgba(202,162,0,0.4)]",
+      stripe: "bg-gradient-to-br from-[rgba(202,162,0,0.14)] to-transparent",
+      overall: "text-[#f5c842]",
+    },
+    silver: {
+      card: "bg-gradient-to-br from-[#1c1e22] via-[#141618] to-[#1a1c20] border-[rgba(160,170,185,0.3)]",
+      stripe: "bg-gradient-to-br from-[rgba(160,170,185,0.09)] to-transparent",
+      overall: "text-[#c8d0dc]",
+    },
+    base: {
+      card: "bg-[#FFFFFF] dark:bg-[#111518] border-[#D4D3D0] dark:border-[#2a2e31]",
+      stripe: "bg-gradient-to-br from-[rgba(176,0,15,0.05)] to-transparent",
+      overall: "text-[#1C1C1C] dark:text-[#E5E6E3]",
+    },
+  } as const;
+
+  const { outfieldOverall, outfieldScores } = useMemo(() => {
+    const csRaw = (s: typeof stats[number]) => {
+      if (s.games_played === 0) return 0;
+      const base = (s.goals * 4 + s.assists * 2.5 + s.shots_on_target * 0.5 + s.key_passes * 0.5 + s.tackles + s.interceptions) / s.games_played;
+      const passScore = s.games_with_passing > 0 ? (s.passes_completed / s.games_with_passing) * 0.2 : 0;
+      const passAccScore = s.pass_attempts >= 10 ? (s.pass_accuracy / 100) * 0.4 : 0;
+      return base + passScore + passAccScore;
+    };
+    const scores = stats
+      .filter(s => !s.player.is_goalkeeper && s.games_played >= 3)
+      .map(s => ({ id: s.player.id, score: csRaw(s) }));
+    const max = Math.max(...scores.map(o => o.score), 0.01);
+    const mine = playerStats && playerStats.games_played >= 3 ? Math.round(62 + (csRaw(playerStats) / max) * 37) : null;
+    return { outfieldOverall: mine, outfieldScores: scores };
+  }, [stats, playerStats]);
+
+  const gkOverall = useMemo(() => {
+    if (!gkStats) return null;
+    const max = Math.max(...goalkeeperStats.map(g => g.savePercentage), 0.01);
+    return gkStats.games >= 3 ? Math.round(55 + (gkStats.savePercentage / max) * 44) : null;
+  }, [goalkeeperStats, gkStats]);
+
+  const overall = outfieldOverall ?? gkOverall;
+
+  const squadRank = useMemo(() => {
+    if (player?.is_goalkeeper && gkStats) {
+      const sorted = [...goalkeeperStats]
+        .map(g => ({ id: g.player.id, score: g.savePercentage }))
+        .sort((a, b) => b.score - a.score);
+      const idx = sorted.findIndex(g => g.id === id);
+      return idx >= 0 ? idx + 1 : null;
+    }
+    if (playerStats) {
+      const sorted = [...outfieldScores].sort((a, b) => b.score - a.score);
+      const idx = sorted.findIndex(o => o.id === id);
+      return idx >= 0 ? idx + 1 : null;
+    }
+    return null;
+  }, [player, gkStats, goalkeeperStats, playerStats, outfieldScores, id]);
+
+  const tier = (isInTots ? "gold" : totwCount >= 2 ? "silver" : "base") as keyof typeof tierStyles;
+
+  const futStats = useMemo(() => {
+    if (!playerStats || playerStats.games_played < 3) return null;
+    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 3);
+    const scale = (val: number, vals: number[]) => {
+      const max = Math.max(...vals, 0.01);
+      return Math.round(55 + (val / max) * 44);
+    };
+    const gaPerGame = (s: typeof playerStats) => s.goal_involvements / s.games_played;
+    const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
+    const conScore = (s: typeof playerStats) => {
+      const m = motmAppearances.get(s.player.id) ?? 0;
+      const t = totwAppearances.get(s.player.id) ?? 0;
+      return (m * 3 + t) / s.games_played;
+    };
+    return {
+      ATK: { val: scale(gaPerGame(playerStats), outfield.map(gaPerGame)), label: "Goal involvements per game" },
+      SHT: { val: scale(playerStats.shot_conversion, outfield.map(s => s.shot_conversion)), label: "Shot conversion %" },
+      PAS: playerStats.pass_attempts > 0
+        ? { val: scale(playerStats.pass_accuracy, outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy)), label: "Pass accuracy %" }
+        : null,
+      DEF: { val: scale(defPerGame(playerStats), outfield.map(defPerGame)), label: "Defensive actions per game" },
+      WIN: { val: scale(playerStats.win_rate, outfield.map(s => s.win_rate)), label: "Win rate %" },
+      CON: { val: scale(conScore(playerStats), outfield.map(conScore)), label: "MOTM & TOTW frequency" },
+    };
+  }, [playerStats, stats, motmAppearances, totwAppearances]);
+
+  const futGkStats = useMemo(() => {
+    if (!gkStats || gkStats.games < 3) return null;
+    const gks = goalkeeperStats.filter(g => g.games >= 3);
+    const scale = (val: number, vals: number[]) => {
+      const max = Math.max(...vals, 0.01);
+      return Math.round(55 + (val / max) * 44);
+    };
+    const conScore = (g: typeof gkStats) => {
+      const m = motmAppearances.get(g.player.id) ?? 0;
+      const t = totwAppearances.get(g.player.id) ?? 0;
+      return (m * 3 + t) / g.games;
+    };
+    const maxGca = Math.max(...gks.map(g => g.goalsConcededPerGame), 0.01);
+    const gcaScore = Math.round(55 + (1 - gkStats.goalsConcededPerGame / maxGca) * 44);
+    return {
+      SAV: { val: scale(gkStats.savePercentage, gks.map(g => g.savePercentage)), label: "Save percentage" },
+      RFX: { val: scale(gkStats.savesPerGame, gks.map(g => g.savesPerGame)), label: "Saves per game" },
+      CLN: { val: scale(gkStats.cleanSheetPercentage, gks.map(g => g.cleanSheetPercentage)), label: "Clean sheet %" },
+      GCA: { val: gcaScore, label: "Goals conceded per game (lower is better)" },
+      WIN: { val: scale(gkStats.win_rate, gks.map(g => g.win_rate)), label: "Win rate %" },
+      CON: { val: scale(conScore(gkStats), gks.map(conScore)), label: "MOTM & TOTW frequency" },
+    };
+  }, [gkStats, goalkeeperStats, motmAppearances, totwAppearances]);
+
   const bestGame = useMemo(() => {
     if (gameBreakdown.length === 0) return null;
     return gameBreakdown.reduce((best, g) =>
       g.goal_involvements > best.goal_involvements ? g : best,
     );
   }, [gameBreakdown]);
+
+  const [awardsExpanded, setAwardsExpanded] = useState(false);
+  const [gameSortKey, setGameSortKey] = useState("date");
+  const [gameSortDir, setGameSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleGameSort(key: string) {
+    if (key === gameSortKey) setGameSortDir(d => d === "desc" ? "asc" : "desc");
+    else { setGameSortKey(key); setGameSortDir("desc"); }
+  }
+
+  const RESULT_VAL: Record<string, number> = { W: 3, D: 1, L: 0 };
+
+  const sortedGameBreakdown = useMemo(() => {
+    return [...gameBreakdown].sort((a, b) => {
+      const dir = (v: number) => gameSortDir === "desc" ? -v : v;
+      if (gameSortKey === "date") return dir(new Date(a.game.date).getTime() - new Date(b.game.date).getTime());
+      if (gameSortKey === "result") {
+        const teamA = gamePlayers.find(gp => gp.game_id === a.game.id && gp.player_id === id)?.team;
+        const teamB = gamePlayers.find(gp => gp.game_id === b.game.id && gp.player_id === id)?.team;
+        const rA = a.game.winning_team === null ? "—" : a.game.winning_team === 0 ? "D" : a.game.winning_team === teamA ? "W" : "L";
+        const rB = b.game.winning_team === null ? "—" : b.game.winning_team === 0 ? "D" : b.game.winning_team === teamB ? "W" : "L";
+        return dir((RESULT_VAL[rA] ?? -1) - (RESULT_VAL[rB] ?? -1));
+      }
+      if (gameSortKey === "motm") {
+        const aM = motmByGame.get(a.game.id)?.id === id ? 1 : 0;
+        const bM = motmByGame.get(b.game.id)?.id === id ? 1 : 0;
+        return dir(aM - bM);
+      }
+      const aVal = (a as unknown as Record<string, number>)[gameSortKey] ?? 0;
+      const bVal = (b as unknown as Record<string, number>)[gameSortKey] ?? 0;
+      return dir(aVal - bVal);
+    });
+  }, [gameBreakdown, gameSortKey, gameSortDir, gamePlayers, id, motmByGame]);
+
+  const [gkSortKey, setGkSortKey] = useState("date");
+  const [gkSortDir, setGkSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleGkSort(key: string) {
+    const lowerBetter = key === "goalsConceded";
+    if (key === gkSortKey) setGkSortDir(d => d === "desc" ? "asc" : "desc");
+    else { setGkSortKey(key); setGkSortDir(lowerBetter ? "asc" : "desc"); }
+  }
+
+  const sortedGkGames = useMemo(() => {
+    const gkGames = games
+      .filter(g => gamePlayers.some(gp => gp.game_id === g.id && gp.player_id === id))
+      .map(game => {
+        const keeperEntry = gamePlayers.find(gp => gp.game_id === game.id && gp.player_id === id);
+        const keeperTeam = keeperEntry?.team;
+        const gameEvents = events.filter(e => e.game_id === game.id);
+        const opposingPlayerIds = new Set(gamePlayers.filter(gp => gp.game_id === game.id && gp.team !== keeperTeam).map(gp => gp.player_id));
+        const saves = gameEvents.filter(e => e.event_type === "shot_on_target" && e.related_event_id === null && opposingPlayerIds.has(e.player_id)).length;
+        const goalsConceded = gameEvents.filter(e => {
+          if (e.event_type !== "goal") return false;
+          if (e.team_override !== null) return e.team_override !== keeperTeam;
+          return opposingPlayerIds.has(e.player_id);
+        }).length;
+        const totalShots = saves + goalsConceded;
+        const svPct = totalShots > 0 ? Math.round((saves / totalShots) * 100) : null;
+        const cleanSheet = goalsConceded === 0;
+        const result = game.winning_team === null ? "—" : game.winning_team === 0 ? "D" : game.winning_team === keeperTeam ? "W" : "L";
+        return { game, saves, goalsConceded, svPct, cleanSheet, result, keeperTeam };
+      });
+
+    return gkGames.sort((a, b) => {
+      const dir = (v: number) => gkSortDir === "desc" ? -v : v;
+      if (gkSortKey === "date") return dir(new Date(a.game.date).getTime() - new Date(b.game.date).getTime());
+      if (gkSortKey === "result") return dir((RESULT_VAL[a.result] ?? -1) - (RESULT_VAL[b.result] ?? -1));
+      if (gkSortKey === "cleanSheet") return dir((a.cleanSheet ? 1 : 0) - (b.cleanSheet ? 1 : 0));
+      if (gkSortKey === "svPct") return dir((a.svPct ?? -1) - (b.svPct ?? -1));
+      return dir((a[gkSortKey as keyof typeof a] as number ?? 0) - (b[gkSortKey as keyof typeof b] as number ?? 0));
+    });
+  }, [games, gamePlayers, events, id, gkSortKey, gkSortDir]);
 
 
   if (loading) {
@@ -136,43 +320,79 @@ export default function PlayerProfile() {
     <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
 
-        {/* Page header */}
-        <div className="space-y-1">
+        {/* Page header — FUT-style card */}
+        <div className="space-y-2">
           <Link to="/" className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors">
             ← Dashboard
           </Link>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-[#1C1C1C] dark:text-[#E5E6E3]">{player.name}</h1>
-              <p className="text-gray-600 dark:text-[#9CA3AF] text-sm mt-0.5">
-                {player.is_goalkeeper
-                  ? `${gkStats?.games ?? 0} ${(gkStats?.games ?? 0) === 1 ? "game" : "games"} played`
-                  : `${playerStats?.games_played ?? 0} ${playerStats?.games_played === 1 ? "game" : "games"} played`}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                {isInTots && (
-                  <span className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700/50 text-yellow-700 dark:text-yellow-400 text-xs font-medium px-2.5 py-1 rounded-full">
-                    ⭐ Best VII
-                  </span>
+          <div className={`relative rounded-2xl border p-5 overflow-hidden ${tierStyles[tier].card}`}>
+            <div className={`absolute inset-0 pointer-events-none ${tierStyles[tier].stripe}`} />
+            <div className="relative flex items-start gap-5">
+              {/* Overall rating */}
+              <div className="text-center flex-shrink-0 min-w-[52px]">
+                <div className={`text-5xl font-black leading-none tracking-tighter ${tierStyles[tier].overall}`}>
+                  {overall ?? "—"}
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#9CA3AF] mt-1.5">OVR</div>
+                {squadRank && (
+                  <div className="text-[10px] text-gray-500 dark:text-[#9CA3AF] mt-0.5">#{squadRank}</div>
                 )}
-                {totwCount > 0 && (
-                  <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-[#1a1e21] border border-[#D4D3D0] dark:border-[#2a2e31] text-gray-600 dark:text-[#E5E6E3] text-xs font-medium px-2.5 py-1 rounded-full">
-                    🏅 ×{totwCount} TOTW
-                  </span>
-                )}
-                {motmCount > 0 && (
-                  <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-400 text-xs font-medium px-2.5 py-1 rounded-full">
-                    🏆 ×{motmCount} MOTM
-                  </span>
+              </div>
+              {/* Identity */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <h1 className={`text-xl font-bold leading-tight ${tier === "base" ? "text-[#1C1C1C] dark:text-[#E5E6E3]" : "text-[#E5E6E3]"}`}>
+                    {player.name}
+                  </h1>
+                  <Link
+                    to={`/players?compare=${id}`}
+                    className={`text-xs transition-colors flex-shrink-0 mt-0.5 ${tier === "base" ? "text-gray-500 dark:text-[#9CA3AF] hover:text-mvf dark:hover:text-mvf" : "text-[#9CA3AF] hover:text-[#E5E6E3]"}`}
+                  >
+                    Compare →
+                  </Link>
+                </div>
+                <p className={`text-sm mt-0.5 ${tier === "base" ? "text-gray-600 dark:text-[#9CA3AF]" : "text-[#9CA3AF]"}`}>
+                  {player.is_goalkeeper
+                    ? `${gkStats?.games ?? 0} ${(gkStats?.games ?? 0) === 1 ? "game" : "games"} played`
+                    : `${playerStats?.games_played ?? 0} ${playerStats?.games_played === 1 ? "game" : "games"} played`}
+                </p>
+                {(isInTots || totwCount > 0 || motmCount > 0) && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                    {isInTots && (
+                      <span className="inline-flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 text-yellow-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                        ⭐ Best VII
+                      </span>
+                    )}
+                    {totwCount > 0 && (
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${tier === "base" ? "bg-gray-100 dark:bg-[#1a1e21] border-[#D4D3D0] dark:border-[#2a2e31] text-gray-600 dark:text-[#E5E6E3]" : "bg-white/10 border-white/20 text-[#E5E6E3]"}`}>
+                        🏅 ×{totwCount} TOTW
+                      </span>
+                    )}
+                    {motmCount > 0 && (
+                      <span className="inline-flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                        🏆 ×{motmCount} MOTM
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-            <Link
-              to={`/players?compare=${id}`}
-              className="text-xs text-gray-500 dark:text-[#9CA3AF] hover:text-mvf dark:hover:text-mvf transition-colors flex-shrink-0 mt-1"
-            >
-              Compare →
-            </Link>
+            {/* Stat grid */}
+            {(futStats || futGkStats) && (
+              <div className={`relative mt-4 pt-4 border-t ${tier === "base" ? "border-[#D4D3D0] dark:border-[#2a2e31]" : "border-white/10"}`}>
+                <div className="grid grid-cols-6 gap-1">
+                  {(futStats
+                    ? (Object.entries(futStats).filter(([, v]) => v !== null) as [string, { val: number; label: string }][])
+                    : (Object.entries(futGkStats!) as [string, { val: number; label: string }][])
+                  ).map(([key, stat]) => (
+                    <div key={key} className="text-center cursor-help" title={stat.label}>
+                      <div className={`text-base font-black leading-none ${tierStyles[tier].overall}`}>{stat.val}</div>
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-[#9CA3AF] mt-1">{key}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -181,7 +401,7 @@ export default function PlayerProfile() {
           <section className="space-y-4">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Awards</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {myAwards.map((award) => (
+              {(awardsExpanded ? myAwards : myAwards.slice(0, 6)).map((award) => (
                 <div key={award.title} className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl p-3 flex items-start gap-3">
                   <span className="text-xl w-7 flex-shrink-0">{award.emoji}</span>
                   <div className="min-w-0">
@@ -191,6 +411,14 @@ export default function PlayerProfile() {
                 </div>
               ))}
             </div>
+            {myAwards.length > 6 && (
+              <button
+                onClick={() => setAwardsExpanded(e => !e)}
+                className="w-full py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-xl transition-colors bg-[#FFFFFF] dark:bg-[#111518]"
+              >
+                {awardsExpanded ? "Show less" : `Show ${myAwards.length - 6} more`}
+              </button>
+            )}
           </section>
         )}
 
@@ -259,7 +487,13 @@ export default function PlayerProfile() {
           gameBreakdown={gameBreakdown}
           gkBreakdown={gkBreakdown}
           isGoalkeeper={player.is_goalkeeper}
+          stats={stats}
+          playerStats={playerStats}
         />
+
+        {!player.is_goalkeeper && (
+          <PassingHub playerId={id!} events={events} players={players} />
+        )}
 
         {/* Goalkeeper stats */}
         {player.is_goalkeeper && gkStats ? (
@@ -304,7 +538,7 @@ export default function PlayerProfile() {
             </section>
 
             {/* GK Game by Game */}
-            {games.filter((g) => gamePlayers.some((gp) => gp.game_id === g.id && gp.player_id === id)).length > 0 && (
+            {sortedGkGames.length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Game by Game</h2>
                 <div className="bg-[#FFFFFF] dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-2xl overflow-hidden">
@@ -312,57 +546,42 @@ export default function PlayerProfile() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[#D4D3D0] dark:border-[#2a2e31]">
-                          <th className="text-left px-5 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">Date</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">SV</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">GC</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">SV%</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">CS</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">Result</th>
+                          {(["date", "saves", "goalsConceded", "svPct", "cleanSheet", "result"] as const).map((key, i) => {
+                            const labels: Record<string, string> = { date: "Date", saves: "SV", goalsConceded: "GC", svPct: "SV%", cleanSheet: "CS", result: "Result" };
+                            const isActive = gkSortKey === key;
+                            return (
+                              <th
+                                key={key}
+                                onClick={() => handleGkSort(key)}
+                                className={`${i === 0 ? "text-left px-5" : "text-center px-4"} py-3 font-semibold text-xs uppercase tracking-wider cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${isActive ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
+                              >
+                                {labels[key]}
+                              </th>
+                            );
+                          })}
                         </tr>
                       </thead>
                       <tbody>
-                        {games
-                          .filter((g) => gamePlayers.some((gp) => gp.game_id === g.id && gp.player_id === id))
-                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                          .map((game) => {
-                            const keeperEntry = gamePlayers.find((gp) => gp.game_id === game.id && gp.player_id === id);
-                            const keeperTeam = keeperEntry?.team;
-                            const gameEvents = events.filter((e) => e.game_id === game.id);
-                            const opposingPlayerIds = new Set(
-                              gamePlayers.filter((gp) => gp.game_id === game.id && gp.team !== keeperTeam).map((gp) => gp.player_id),
-                            );
-                            const saves = gameEvents.filter((e) =>
-                              e.event_type === "shot_on_target" && e.related_event_id === null && opposingPlayerIds.has(e.player_id),
-                            ).length;
-                            const goalsConceded = gameEvents.filter((e) => {
-                              if (e.event_type !== "goal") return false;
-                              if (e.team_override !== null) return e.team_override !== keeperTeam;
-                              return opposingPlayerIds.has(e.player_id);
-                            }).length;
-                            const totalShots = saves + goalsConceded;
-                            const svPct = totalShots > 0 ? Math.round((saves / totalShots) * 100) : null;
-                            const cleanSheet = goalsConceded === 0;
-                            const result = game.winning_team === null ? "—" : game.winning_team === 0 ? "D" : game.winning_team === keeperTeam ? "W" : "L";
-                            const resultColor = result === "W" ? "text-green-600 dark:text-green-400" : result === "L" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-[#9CA3AF]";
-
-                            return (
-                              <tr key={game.id} className="hover:bg-[#F5F4F2] dark:hover:bg-[#1a1e21]/40 transition-colors">
-                                <td className="px-5 py-3.5 text-gray-600 dark:text-[#E5E6E3]">
-                                  {new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                                </td>
-                                <td className="text-center px-4 py-3.5 text-[#1C1C1C] dark:text-[#E5E6E3] font-semibold">{saves}</td>
-                                <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{goalsConceded}</td>
-                                <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{svPct !== null ? `${svPct}%` : "—"}</td>
-                                <td className="text-center px-4 py-3.5">
-                                  {cleanSheet
-                                    ? <span className="text-green-600 dark:text-green-400 font-semibold">✓</span>
-                                    : <span className="text-gray-300 dark:text-[#737373]">—</span>
-                                  }
-                                </td>
-                                <td className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}>{result}</td>
-                              </tr>
-                            );
-                          })}
+                        {sortedGkGames.map(({ game, saves, goalsConceded, svPct, cleanSheet, result }) => {
+                          const resultColor = result === "W" ? "text-green-600 dark:text-green-400" : result === "L" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-[#9CA3AF]";
+                          return (
+                            <tr key={game.id} className="hover:bg-[#F5F4F2] dark:hover:bg-[#1a1e21]/40 transition-colors">
+                              <td className="px-5 py-3.5 text-gray-600 dark:text-[#E5E6E3]">
+                                {new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                              </td>
+                              <td className="text-center px-4 py-3.5 text-[#1C1C1C] dark:text-[#E5E6E3] font-semibold">{saves}</td>
+                              <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{goalsConceded}</td>
+                              <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{svPct !== null ? `${svPct}%` : "—"}</td>
+                              <td className="text-center px-4 py-3.5">
+                                {cleanSheet
+                                  ? <span className="text-green-600 dark:text-green-400 font-semibold">✓</span>
+                                  : <span className="text-gray-300 dark:text-[#737373]">—</span>
+                                }
+                              </td>
+                              <td className={`text-center px-4 py-3.5 font-semibold ${resultColor}`}>{result}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -381,6 +600,9 @@ export default function PlayerProfile() {
                 <StatRow label="Goal Involvements (G+A)" value={playerStats.goal_involvements} />
                 <StatRow label="Key Passes" value={playerStats.key_passes} />
                 <StatRow label="Key Passes per Game" value={playerStats.games_played > 0 ? playerStats.key_passes_per_game : "—"} />
+                <StatRow label="Passes Completed" value={playerStats.pass_attempts > 0 ? playerStats.passes_completed : "—"} />
+                <StatRow label="Pass Accuracy" value={playerStats.pass_attempts > 0 ? `${playerStats.pass_accuracy}%` : "—"} />
+                <StatRow label="Passes per Game" value={playerStats.pass_attempts > 0 && playerStats.games_played > 0 ? playerStats.passes_per_game : "—"} />
                 <StatRow label="Goals per Game" value={playerStats.goals_per_game} />
                 {playerStats.hat_tricks > 0 && (
                   <StatRow label="Hat Tricks 🎩" value={playerStats.hat_tricks} />
@@ -465,20 +687,23 @@ export default function PlayerProfile() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[#D4D3D0] dark:border-[#2a2e31]">
-                          <th className="text-left px-5 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">Date</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">G</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">A</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">G+A</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">SOT</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">KP</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">TKL</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">INT</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">MOTM</th>
-                          <th className="text-center px-4 py-3 text-gray-600 dark:text-[#9CA3AF] font-semibold text-xs uppercase tracking-wider">Result</th>
+                          {(["date", "goals", "assists", "goal_involvements", "shots_on_target", "key_passes", "tackles", "interceptions", "passes_completed", "pass_accuracy", "motm", "result"] as const).map((key, i) => {
+                            const labels: Record<string, string> = { date: "Date", goals: "G", assists: "A", goal_involvements: "G+A", shots_on_target: "SOT", key_passes: "KP", tackles: "TKL", interceptions: "INT", passes_completed: "PC", pass_accuracy: "P Acc%", motm: "MOTM", result: "Result" };
+                            const isActive = gameSortKey === key;
+                            return (
+                              <th
+                                key={key}
+                                onClick={() => handleGameSort(key)}
+                                className={`${i === 0 ? "text-left px-5" : "text-center px-4"} py-3 font-semibold text-xs uppercase tracking-wider cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${isActive ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
+                              >
+                                {labels[key]}
+                              </th>
+                            );
+                          })}
                         </tr>
                       </thead>
                       <tbody>
-                        {gameBreakdown.map(({ game, goals, assists, key_passes, shots_on_target, goal_involvements, tackles, interceptions }) => {
+                        {sortedGameBreakdown.map(({ game, goals, assists, key_passes, shots_on_target, goal_involvements, tackles, interceptions, passes_completed, pass_accuracy }) => {
                           const gp = gamePlayers.find((g) => g.game_id === game.id && g.player_id === id);
                           const playerTeam = gp?.team;
                           const result = game.winning_team === null ? "—" : game.winning_team === 0 ? "D" : game.winning_team === playerTeam ? "W" : "L";
@@ -496,6 +721,8 @@ export default function PlayerProfile() {
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{key_passes > 0 ? key_passes : "—"}</td>
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{tackles > 0 ? tackles : "—"}</td>
                               <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{interceptions > 0 ? interceptions : "—"}</td>
+                              <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{passes_completed > 0 ? passes_completed : "—"}</td>
+                              <td className="text-center px-4 py-3.5 text-gray-500 dark:text-[#E5E6E3]">{passes_completed > 0 ? `${pass_accuracy}%` : "—"}</td>
                               <td className="text-center px-4 py-3.5">
                                 {motmByGame.get(game.id)?.id === id
                                   ? <span className="text-amber-500">🏆</span>

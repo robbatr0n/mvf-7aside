@@ -23,6 +23,13 @@ function calcTeamStats(
     const interceptions = gameEvents.filter(
         e => playerIds.has(e.player_id) && e.event_type === 'interception'
     ).length
+    const passesCompleted = gameEvents.filter(
+        e => playerIds.has(e.player_id) && e.event_type === 'pass_completed'
+    ).length
+    const passesFailed = gameEvents.filter(
+        e => playerIds.has(e.player_id) && e.event_type === 'pass_failed'
+    ).length
+    const passAttempts = passesCompleted + passesFailed
 
     return {
         shots: totalShots,
@@ -32,6 +39,8 @@ function calcTeamStats(
         keyPasses,
         tackles,
         interceptions,
+        passesCompleted,
+        passAccuracy: passAttempts > 0 ? Math.round((passesCompleted / passAttempts) * 100) : 0,
     }
 }
 
@@ -145,6 +154,14 @@ export function calculatePlayerGameBreakdown(
                 ).length,
                 tackles: gameEvents.filter(e => e.event_type === 'tackle').length,
                 interceptions: gameEvents.filter(e => e.event_type === 'interception').length,
+                passes_completed: gameEvents.filter(e => e.event_type === 'pass_completed').length,
+                passes_failed: gameEvents.filter(e => e.event_type === 'pass_failed').length,
+                pass_accuracy: (() => {
+                    const pc = gameEvents.filter(e => e.event_type === 'pass_completed').length
+                    const pf = gameEvents.filter(e => e.event_type === 'pass_failed').length
+                    const total = pc + pf
+                    return total > 0 ? Math.round((pc / total) * 100) : 0
+                })(),
             }
         })
         .sort((a, b) => new Date(b.game.date).getTime() - new Date(a.game.date).getTime())

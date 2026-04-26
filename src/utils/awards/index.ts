@@ -5,6 +5,7 @@ import { buildAttackingAwards } from './attacking'
 import { buildDefendingAwards } from './defending'
 import { buildGoalkeepingAwards } from './goalkeeping'
 import { buildConsistencyAwards } from './consistency'
+import { buildPassingAwards } from './passing'
 
 export type { Award, PartnershipAward }
 
@@ -27,9 +28,10 @@ export function calculateAwards(
     const { awards: consistency, partnership } = buildConsistencyAwards(
         eligibleStats, qualified, totwAppearances, motmAppearances, players, events, games
     )
+    const passing = buildPassingAwards(eligibleStats, events, players)
 
     return {
-        awards: [...attacking, ...defending, ...goalkeeping, ...consistency],
+        awards: [...attacking, ...defending, ...goalkeeping, ...consistency, ...passing],
         partnership,
     }
 }

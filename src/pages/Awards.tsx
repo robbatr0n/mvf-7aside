@@ -65,6 +65,7 @@ function PartnershipCard({ award }: { award: PartnershipAward }) {
 const SECTIONS = [
   { title: 'Attacking', titles: ['Top Scorer', 'Goal Machine', 'Playmaker', 'Assist Hero', 'Most Involved', 'One Game Wonder', 'Chance Creator', 'Key Pass Hero', 'Hat Trick Hero', 'Clinical', 'Trigger Happy', 'Nearly Man', 'Swing and a Miss'] },
   { title: 'Defending', titles: ['Hardman', 'Sweeper', 'Enforcer', 'Tackle Hero', 'Interception Hero', 'Terminator', 'The Interceptor'] },
+  { title: 'Passing', titles: ['The Metronome', 'Silk', 'Pass Machine', 'Conveyor Belt'] },
   { title: 'Goalkeepers', titles: ['The Wall', 'Stone Cold', 'Superhero'] },
   { title: 'Consistency', titles: ['Reliable', 'Always There', 'On Fire', 'TOTW King', 'MOTM King', 'Winner', 'Unlucky', 'Hardest Worker', 'Best Partnership'] },
 ]

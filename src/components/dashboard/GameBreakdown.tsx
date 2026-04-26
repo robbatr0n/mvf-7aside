@@ -145,6 +145,8 @@ function TeamStatsPanel({
       <StatBar label="Key Passes" team1Value={team1Stats.keyPasses} team2Value={team2Stats.keyPasses} />
       <StatBar label="Tackles" team1Value={team1Stats.tackles} team2Value={team2Stats.tackles} />
       <StatBar label="Interceptions" team1Value={team1Stats.interceptions} team2Value={team2Stats.interceptions} />
+      <StatBar label="Passes" team1Value={team1Stats.passesCompleted} team2Value={team2Stats.passesCompleted} />
+      <StatBar label="Pass Acc" team1Value={team1Stats.passAccuracy} team2Value={team2Stats.passAccuracy} suffix="%" />
     </div>
   );
 }
@@ -170,7 +172,11 @@ function PlayerRatingsPanel({
     const kp = pe.filter((e) => e.event_type === "key_pass").length;
     const tackles = pe.filter((e) => e.event_type === "tackle").length;
     const interceptions = pe.filter((e) => e.event_type === "interception").length;
-    return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles + interceptions;
+    const passCompleted = pe.filter((e) => e.event_type === "pass_completed").length;
+    const hasPassingEvents = pe.some(
+      (e) => e.event_type === "pass_completed" || e.event_type === "pass_received" || e.event_type === "pass_failed"
+    );
+    return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles + interceptions + (hasPassingEvents ? passCompleted * 0.2 : 0);
   }
 
   const allPlayers = [

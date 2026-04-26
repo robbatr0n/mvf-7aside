@@ -38,7 +38,7 @@ export function buildShootingAwards(
 
     const nearlyManSorted = [...eligibleStats]
         .filter(s => s.shots_on_target > s.goals)
-        .sort((a, b) => b.shots_on_target - b.goals - (a.shots_on_target - a.goals))
+        .sort((a, b) => (b.shots_on_target - b.goals) - (a.shots_on_target - a.goals))
     const mostSaved = nearlyManSorted[0] ? nearlyManSorted[0].shots_on_target - nearlyManSorted[0].goals : 0
     const nearlyWinners = nearlyManSorted.filter(s => s.shots_on_target - s.goals === mostSaved)
     const nearlyMan: Award = {
@@ -151,7 +151,6 @@ export function buildAttackingAwards(
         if (count > current) bestSingleGA.set(playerId, count)
     })
     const eligibleEntries = Array.from(bestSingleGA.entries())
-        .filter(([playerId]) => !players.find(p => p.id === playerId)?.is_guest)
     const bestSingle = Math.max(0, ...eligibleEntries.map(([, count]) => count))
     const wonderWinners = eligibleStats
         .filter(s => (bestSingleGA.get(s.player.id) ?? 0) === bestSingle && bestSingle > 0)

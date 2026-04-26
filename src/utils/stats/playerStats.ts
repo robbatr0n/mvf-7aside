@@ -37,6 +37,17 @@ export function calculatePlayerStats(
     const interceptions_per_game = games_played > 0 ? Math.round((interceptions / games_played) * 100) / 100 : 0
     const defensive_actions_per_game = games_played > 0 ? Math.round((defensive_actions / games_played) * 100) / 100 : 0
 
+    const passes_completed = playerEvents.filter(e => e.event_type === 'pass_completed').length
+    const passes_failed = playerEvents.filter(e => e.event_type === 'pass_failed').length
+    const pass_attempts = passes_completed + passes_failed
+    const pass_accuracy = pass_attempts > 0 ? Math.round((passes_completed / pass_attempts) * 100) : 0
+    const passes_per_game = games_played > 0 ? Math.round((passes_completed / games_played) * 100) / 100 : 0
+    const games_with_passing = new Set(
+        playerEvents
+            .filter(e => e.event_type === 'pass_completed' || e.event_type === 'pass_received' || e.event_type === 'pass_failed')
+            .map(e => e.game_id)
+    ).size
+
     let wins = 0
     let losses = 0
     let draws = 0
@@ -123,6 +134,12 @@ export function calculatePlayerStats(
         tackles_per_game,
         interceptions_per_game,
         defensive_actions_per_game,
+        passes_completed,
+        passes_failed,
+        pass_attempts,
+        pass_accuracy,
+        passes_per_game,
+        games_with_passing,
     }
 }
 
