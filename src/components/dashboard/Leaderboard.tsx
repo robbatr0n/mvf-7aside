@@ -121,7 +121,7 @@ function Tooltip({
 const TAB_DEFAULTS: Record<Tab, string> = {
   attacking: "goal_involvements",
   defending: "defensive_actions",
-  passing: "pass_accuracy",
+  passing: "passes_completed",
 };
 
 export default function Leaderboard({
@@ -135,8 +135,6 @@ export default function Leaderboard({
   const [tab, setTab] = useState<Tab>("attacking");
   const [view, setView] = useState<"overall" | "last3">("overall");
   const [showAll, setShowAll] = useState(false);
-  const [sortKey, setSortKey] = useState<string>("goal_involvements");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const last3Stats = useMemo(
     () => calculateLastNPlayerStats(players, events, games, gamePlayers, 3),
@@ -144,29 +142,15 @@ export default function Leaderboard({
   );
 
   const activeStats = view === "overall" ? stats : last3Stats;
-
-  function changeTab(newTab: Tab) {
-    setTab(newTab);
-    setSortKey(TAB_DEFAULTS[newTab]);
-    setSortDir("desc");
-  }
-
-  function handleSort(key: string) {
-    if (key === sortKey) setSortDir(d => d === "desc" ? "asc" : "desc");
-    else { setSortKey(key); setSortDir("desc"); }
-  }
+  const sortKey = TAB_DEFAULTS[tab];
 
   const sortedStats = useMemo(() => {
     return [...activeStats].sort((a, b) => {
-      if (sortKey === "name") {
-        const cmp = a.player.name.localeCompare(b.player.name);
-        return sortDir === "asc" ? cmp : -cmp;
-      }
       const aVal = (a[sortKey as keyof PlayerStats] as number) ?? 0;
       const bVal = (b[sortKey as keyof PlayerStats] as number) ?? 0;
-      return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+      return bVal - aVal;
     });
-  }, [activeStats, sortKey, sortDir]);
+  }, [activeStats, sortKey]);
 
   const headers =
     tab === "attacking" ? ATTACKING_HEADERS :
@@ -205,7 +189,7 @@ export default function Leaderboard({
 
           <div className="flex items-center bg-gray-100 dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-lg p-0.5">
             <button
-              onClick={() => changeTab("attacking")}
+              onClick={() => setTab("attacking")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === "attacking"
                 ? "bg-mvf text-white"
                 : "text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3]"
@@ -215,7 +199,7 @@ export default function Leaderboard({
               <span className="hidden sm:inline">⚽ Attacking</span>
             </button>
             <button
-              onClick={() => changeTab("defending")}
+              onClick={() => setTab("defending")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === "defending"
                 ? "bg-mvf text-white"
                 : "text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3]"
@@ -225,7 +209,7 @@ export default function Leaderboard({
               <span className="hidden sm:inline">💪 Defending</span>
             </button>
             <button
-              onClick={() => changeTab("passing")}
+              onClick={() => setTab("passing")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${tab === "passing"
                 ? "bg-mvf text-white"
                 : "text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3]"
@@ -245,17 +229,13 @@ export default function Leaderboard({
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-[#FFFFFF] dark:bg-[#111518]">
-                  <th
-                    onClick={() => handleSort("name")}
-                    className={`text-left px-5 py-3 font-semibold text-xs uppercase tracking-wider w-px whitespace-nowrap cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${sortKey === "name" ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
-                  >
+                  <th className="text-left px-5 py-3 font-semibold text-xs uppercase tracking-wider w-px whitespace-nowrap text-gray-600 dark:text-[#9CA3AF]">
                     Player
                   </th>
                   {headers.map((h, hi) => (
                     <th
                       key={h.key}
-                      onClick={() => handleSort(h.key)}
-                      className={`text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider border-l border-[#D4D3D0] dark:border-[#2a2e31] cursor-pointer select-none transition-colors hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] ${hi % 2 === 1 ? "bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]" : ""} ${sortKey === h.key ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
+                      className={`text-center px-4 py-3 font-semibold text-xs uppercase tracking-wider border-l border-[#D4D3D0] dark:border-[#2a2e31] ${hi % 2 === 1 ? "bg-black/[0.02] dark:bg-[#FFFFFF]/[0.02]" : ""} ${sortKey === h.key ? "text-[#1C1C1C] dark:text-[#E5E6E3] border-b-2 border-b-mvf" : "text-gray-600 dark:text-[#9CA3AF]"}`}
                     >
                       <Tooltip text={h.tooltip}>{h.label}</Tooltip>
                     </th>

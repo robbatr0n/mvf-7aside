@@ -4,6 +4,7 @@ import { useTheme } from '../../hooks/useTheme'
 const NAV_ITEMS = [
   { label: "Players", path: "/players" },
   { label: "Awards", path: "/awards" },
+  { label: "Season", path: "/season" },
 ];
 
 export default function Nav() {

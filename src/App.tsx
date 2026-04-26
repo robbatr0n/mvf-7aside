@@ -10,6 +10,7 @@ import ClipManager from "./pages/ClipManager";
 import PlayerGoals from "./pages/PlayerGoals";
 import Players from "./pages/Players";
 import Compare from "./pages/Compare";
+import Season from "./pages/Season";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/awards" element={<Awards />} />
+          <Route path="/season" element={<Season />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
           <Route path="/changelog" element={<Changelog />} />
           <Route path="/player/:id/goals" element={<PlayerGoals />} />
