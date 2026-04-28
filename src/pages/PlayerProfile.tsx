@@ -104,20 +104,51 @@ export default function PlayerProfile() {
     },
   } as const;
 
-  const { outfieldOverall, outfieldScores } = useMemo(() => {
-    const csRaw = (s: typeof stats[number]) => {
-      if (s.games_played === 0) return 0;
-      const base = (s.goals * 4 + s.assists * 2.5 + s.shots_on_target * 0.5 + s.key_passes * 0.5 + s.tackles + s.interceptions) / s.games_played;
-      const passScore = s.games_with_passing > 0 ? (s.passes_completed / s.games_with_passing) * 0.2 : 0;
-      const passAccScore = s.pass_attempts >= 10 ? (s.pass_accuracy / 100) * 0.4 : 0;
-      return base + passScore + passAccScore;
+  const { outfieldOverall, outfieldScores, futStats } = useMemo(() => {
+    const empty = { outfieldOverall: null, outfieldScores: [] as { id: string; score: number }[], futStats: null };
+    if (!playerStats) return empty;
+
+    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 5);
+
+    const gaPerGame  = (s: typeof playerStats) => s.goal_involvements / s.games_played;
+    const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
+    const totalShots = (s: typeof playerStats) => s.shots_on_target + s.shots_off_target;
+
+    const gaMax  = Math.max(...outfield.map(gaPerGame), 0.01);
+    const defMax = Math.max(...outfield.map(defPerGame), 0.01);
+    const shoMax = Math.max(...outfield.filter(s => totalShots(s) >= 5).map(s => s.shot_accuracy), 0.01);
+    const pasMax = Math.max(...outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy), 0.01);
+
+    const scale = (val: number, max: number) => Math.round(55 + (val / max) * 44);
+
+    const weightedNorm = (s: typeof playerStats) => {
+      const dims: { norm: number; weight: number }[] = [
+        { norm: gaPerGame(s) / gaMax,  weight: 0.40 },
+        { norm: defPerGame(s) / defMax, weight: 0.25 },
+      ];
+      if (totalShots(s) >= 5)    dims.push({ norm: s.shot_accuracy / shoMax, weight: 0.20 });
+      if (s.pass_attempts > 0)   dims.push({ norm: s.pass_accuracy / pasMax, weight: 0.15 });
+      const totalW = dims.reduce((sum, d) => sum + d.weight, 0);
+      return dims.reduce((sum, d) => sum + d.norm * (d.weight / totalW), 0);
     };
-    const scores = stats
-      .filter(s => !s.player.is_goalkeeper && s.games_played >= 5)
-      .map(s => ({ id: s.player.id, score: csRaw(s) }));
-    const max = Math.max(...scores.map(o => o.score), 0.01);
-    const mine = playerStats && playerStats.games_played >= 3 ? Math.round(65 + (csRaw(playerStats) / max) * 26) : null;
-    return { outfieldOverall: mine, outfieldScores: scores };
+
+    const scores = outfield.map(s => ({ id: s.player.id, score: weightedNorm(s) }));
+
+    if (playerStats.games_played < 3) return { outfieldOverall: null, outfieldScores: scores, futStats: null };
+
+    const ga  = gaPerGame(playerStats);
+    const def = defPerGame(playerStats);
+    const sho = totalShots(playerStats) >= 5 ? playerStats.shot_accuracy : null;
+    const pas = playerStats.pass_attempts > 0 ? playerStats.pass_accuracy : null;
+
+    const fs = {
+      ATT: { val: scale(ga, gaMax),   label: "Goal involvements per game" },
+      SHO: sho !== null ? { val: scale(sho, shoMax), label: "Shot accuracy %" }   : null,
+      PAS: pas !== null ? { val: scale(pas, pasMax), label: "Pass accuracy %" }    : null,
+      DEF: { val: scale(def, defMax), label: "Defensive actions per game" },
+    };
+
+    return { outfieldOverall: Math.round(65 + weightedNorm(playerStats) * 26), outfieldScores: scores, futStats: fs };
   }, [stats, playerStats]);
 
   const gkOverall = useMemo(() => {
@@ -139,12 +170,10 @@ export default function PlayerProfile() {
       return idx >= 0 ? idx + 1 : null;
     }
     if (playerStats) {
-      const max = Math.max(...outfieldScores.map(o => o.score), 0.01);
       const boostedScores = outfieldScores.map(o => {
         const name = stats.find(s => s.player.id === o.id)?.player.name ?? '';
         const boost = ((statBoosts as Record<string, Record<string, unknown>>)[name]?.OVR as number | undefined) ?? 0;
-        const computedOvr = Math.round(50 + (o.score / max) * 49);
-        return { id: o.id, ovr: Math.min(99, computedOvr + boost) };
+        return { id: o.id, ovr: Math.min(99, Math.round(65 + o.score * 26) + boost) };
       });
       const sorted = boostedScores.sort((a, b) => b.ovr - a.ovr);
       const idx = sorted.findIndex(o => o.id === id);
@@ -154,28 +183,6 @@ export default function PlayerProfile() {
   }, [player, gkStats, goalkeeperStats, playerStats, outfieldScores, stats, id]);
 
   const tier = (isInTots ? "gold" : totwCount >= 2 ? "silver" : "base") as keyof typeof tierStyles;
-
-  const futStats = useMemo(() => {
-    if (!playerStats || playerStats.games_played < 3) return null;
-    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 6);
-    const scale = (val: number, vals: number[]) => {
-      const max = Math.max(...vals, 0.01);
-      return Math.round(55 + (val / max) * 44);
-    };
-    const gaPerGame = (s: typeof playerStats) => s.goal_involvements / s.games_played;
-    const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
-    const totalShots = (s: typeof playerStats) => s.shots_on_target + s.shots_off_target;
-    return {
-      ATT: { val: scale(gaPerGame(playerStats), outfield.map(gaPerGame)), label: "Goal involvements per game" },
-      SHO: totalShots(playerStats) >= 5
-        ? { val: scale(playerStats.shot_accuracy, outfield.filter(s => totalShots(s) >= 5).map(s => s.shot_accuracy)), label: "Shot accuracy %" }
-        : null,
-      PAS: playerStats.pass_attempts > 0
-        ? { val: scale(playerStats.pass_accuracy, outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy)), label: "Pass accuracy %" }
-        : null,
-      DEF: { val: scale(defPerGame(playerStats), outfield.map(defPerGame)), label: "Defensive actions per game" },
-    };
-  }, [playerStats, stats]);
 
   const futGkStats = useMemo(() => {
     if (!gkStats || gkStats.games < 3) return null;
