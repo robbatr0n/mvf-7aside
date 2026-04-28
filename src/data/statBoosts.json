@@ -1,5 +1,19 @@
 {
   "Colby Silver": {
-    "ATT": 6
+    "ATT": 6,
+    "OVR": 3
+  },
+  "Ray Tizzard": {
+    "OVR": 3
+  },
+  "Luke Mcdonald": {
+    "OVR": 1
+  },
+  "Dean Johnson": {
+    "SHO": -4
+  },
+  "Mahad Maimoon": {
+    "ATT": 10,
+    "OVR": 3
   }
 }
