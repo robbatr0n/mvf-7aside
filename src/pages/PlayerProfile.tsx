@@ -11,7 +11,10 @@ import { calculateAwards } from "../utils/awards";
 import PlayerCharts from "../components/profile/PlayerCharts";
 import PassingHub from "../components/profile/PassingHub";
 import VideoModal from "../components/shared/VideoModal";
+import PLMatchCard from "../components/shared/PLMatchCard";
 import { useTeamStats } from "../hooks/useTeamStats";
+import statBoosts from "../data/statBoosts.json";
+import { computeAllPLMatches } from "../utils/plMatch";
 
 interface StatRowProps {
   label: string;
@@ -110,20 +113,22 @@ export default function PlayerProfile() {
       return base + passScore + passAccScore;
     };
     const scores = stats
-      .filter(s => !s.player.is_goalkeeper && s.games_played >= 3)
+      .filter(s => !s.player.is_goalkeeper && s.games_played >= 5)
       .map(s => ({ id: s.player.id, score: csRaw(s) }));
     const max = Math.max(...scores.map(o => o.score), 0.01);
-    const mine = playerStats && playerStats.games_played >= 3 ? Math.round(62 + (csRaw(playerStats) / max) * 37) : null;
+    const mine = playerStats && playerStats.games_played >= 3 ? Math.round(65 + (csRaw(playerStats) / max) * 26) : null;
     return { outfieldOverall: mine, outfieldScores: scores };
   }, [stats, playerStats]);
 
   const gkOverall = useMemo(() => {
     if (!gkStats) return null;
     const max = Math.max(...goalkeeperStats.map(g => g.savePercentage), 0.01);
-    return gkStats.games >= 3 ? Math.round(55 + (gkStats.savePercentage / max) * 44) : null;
+    return gkStats.games >= 3 ? Math.round(65 + (gkStats.savePercentage / max) * 26) : null;
   }, [goalkeeperStats, gkStats]);
 
-  const overall = outfieldOverall ?? gkOverall;
+  const computedOverall = outfieldOverall ?? gkOverall;
+  const ovrBoost = ((statBoosts as Record<string, Record<string, unknown>>)[player?.name ?? '']?.OVR as number | undefined) ?? 0;
+  const overall = computedOverall !== null ? Math.min(99, computedOverall + ovrBoost) : null;
 
   const squadRank = useMemo(() => {
     if (player?.is_goalkeeper && gkStats) {
@@ -134,40 +139,43 @@ export default function PlayerProfile() {
       return idx >= 0 ? idx + 1 : null;
     }
     if (playerStats) {
-      const sorted = [...outfieldScores].sort((a, b) => b.score - a.score);
+      const max = Math.max(...outfieldScores.map(o => o.score), 0.01);
+      const boostedScores = outfieldScores.map(o => {
+        const name = stats.find(s => s.player.id === o.id)?.player.name ?? '';
+        const boost = ((statBoosts as Record<string, Record<string, unknown>>)[name]?.OVR as number | undefined) ?? 0;
+        const computedOvr = Math.round(50 + (o.score / max) * 49);
+        return { id: o.id, ovr: Math.min(99, computedOvr + boost) };
+      });
+      const sorted = boostedScores.sort((a, b) => b.ovr - a.ovr);
       const idx = sorted.findIndex(o => o.id === id);
       return idx >= 0 ? idx + 1 : null;
     }
     return null;
-  }, [player, gkStats, goalkeeperStats, playerStats, outfieldScores, id]);
+  }, [player, gkStats, goalkeeperStats, playerStats, outfieldScores, stats, id]);
 
   const tier = (isInTots ? "gold" : totwCount >= 2 ? "silver" : "base") as keyof typeof tierStyles;
 
   const futStats = useMemo(() => {
     if (!playerStats || playerStats.games_played < 3) return null;
-    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 3);
+    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 6);
     const scale = (val: number, vals: number[]) => {
       const max = Math.max(...vals, 0.01);
       return Math.round(55 + (val / max) * 44);
     };
     const gaPerGame = (s: typeof playerStats) => s.goal_involvements / s.games_played;
     const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
-    const conScore = (s: typeof playerStats) => {
-      const m = motmAppearances.get(s.player.id) ?? 0;
-      const t = totwAppearances.get(s.player.id) ?? 0;
-      return (m * 3 + t) / s.games_played;
-    };
+    const totalShots = (s: typeof playerStats) => s.shots_on_target + s.shots_off_target;
     return {
-      ATK: { val: scale(gaPerGame(playerStats), outfield.map(gaPerGame)), label: "Goal involvements per game" },
-      SHT: { val: scale(playerStats.shot_conversion, outfield.map(s => s.shot_conversion)), label: "Shot conversion %" },
+      ATT: { val: scale(gaPerGame(playerStats), outfield.map(gaPerGame)), label: "Goal involvements per game" },
+      SHO: totalShots(playerStats) >= 5
+        ? { val: scale(playerStats.shot_accuracy, outfield.filter(s => totalShots(s) >= 5).map(s => s.shot_accuracy)), label: "Shot accuracy %" }
+        : null,
       PAS: playerStats.pass_attempts > 0
         ? { val: scale(playerStats.pass_accuracy, outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy)), label: "Pass accuracy %" }
         : null,
       DEF: { val: scale(defPerGame(playerStats), outfield.map(defPerGame)), label: "Defensive actions per game" },
-      WIN: { val: scale(playerStats.win_rate, outfield.map(s => s.win_rate)), label: "Win rate %" },
-      CON: { val: scale(conScore(playerStats), outfield.map(conScore)), label: "MOTM & TOTW frequency" },
     };
-  }, [playerStats, stats, motmAppearances, totwAppearances]);
+  }, [playerStats, stats]);
 
   const futGkStats = useMemo(() => {
     if (!gkStats || gkStats.games < 3) return null;
@@ -192,6 +200,30 @@ export default function PlayerProfile() {
       CON: { val: scale(conScore(gkStats), gks.map(conScore)), label: "MOTM & TOTW frequency" },
     };
   }, [gkStats, goalkeeperStats, motmAppearances, totwAppearances]);
+
+  type StatMap = Record<string, { val: number; label: string } | null>;
+  const boostedFutStats = useMemo((): StatMap | null => {
+    if (!futStats || !player) return futStats;
+    const boosts = (statBoosts as Record<string, Record<string, unknown>>)[player.name] ?? {};
+    if (Object.keys(boosts).length === 0) return futStats;
+    return Object.fromEntries(
+      Object.entries(futStats).map(([key, stat]) => {
+        if (!stat) return [key, stat];
+        const boost = (boosts[key] as number | undefined) ?? 0;
+        return [key, { ...stat, val: Math.min(99, stat.val + boost) }];
+      })
+    );
+  }, [futStats, player]);
+
+  const plMatch = useMemo(() => {
+    if (!player) return null;
+    const boosts = (statBoosts as Record<string, Record<string, unknown>>)[player.name] ?? {};
+    const override = boosts['PLMatch'] as { name: string; team: string; pos?: string } | undefined;
+    if (override) return { name: override.name, club: override.team, position: override.pos ?? '' };
+    const allMatches = computeAllPLMatches(stats, goalkeeperStats);
+    const match = allMatches.get(player.id);
+    return match ? { name: match.name, club: match.club, position: match.position } : null;
+  }, [player, stats, goalkeeperStats]);
 
   const bestGame = useMemo(() => {
     if (gameBreakdown.length === 0) return null;
@@ -378,11 +410,11 @@ export default function PlayerProfile() {
               </div>
             </div>
             {/* Stat grid */}
-            {(futStats || futGkStats) && (
+            {(boostedFutStats || futGkStats) && (
               <div className={`relative mt-4 pt-4 border-t ${tier === "base" ? "border-[#D4D3D0] dark:border-[#2a2e31]" : "border-white/10"}`}>
-                <div className="grid grid-cols-6 gap-1">
-                  {(futStats
-                    ? (Object.entries(futStats).filter(([, v]) => v !== null) as [string, { val: number; label: string }][])
+                <div className="grid grid-cols-4 gap-1">
+                  {(boostedFutStats
+                    ? (Object.entries(boostedFutStats).filter(([, v]) => v !== null) as [string, { val: number; label: string }][])
                     : (Object.entries(futGkStats!) as [string, { val: number; label: string }][])
                   ).map(([key, stat]) => (
                     <div key={key} className="text-center cursor-help" title={stat.label}>
@@ -395,6 +427,10 @@ export default function PlayerProfile() {
             )}
           </div>
         </div>
+
+        {plMatch && (
+          <PLMatchCard name={plMatch.name} club={plMatch.club} position={plMatch.position} />
+        )}
 
         {/* Awards */}
         {myAwards.length > 0 && (
