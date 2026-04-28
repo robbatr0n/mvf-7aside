@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { usePlayers } from '../hooks/usePlayers'
 import { useEvents } from '../hooks/useEvents'
 import { useGames } from '../hooks/useGames'
@@ -189,11 +189,40 @@ export default function Season() {
   }, [stats, goalkeeperStats])
 
   const [archetypePopup, setArchetypePopup] = useState<{ name: string; goals: number; assists: number } | null>(null)
+  const [defPopup, setDefPopup] = useState<{ name: string; tackles: number; interceptions: number } | null>(null)
+  const [pasPopup, setPasPopup] = useState<{ name: string; pass_attempts: number; pass_accuracy: number } | null>(null)
+  const archetypeScrollRef = useRef<HTMLDivElement>(null)
+  const [archetypeSlide, setArchetypeSlide] = useState(0)
+
+  function handleArchetypeScroll() {
+    if (!archetypeScrollRef.current) return
+    const { scrollLeft, clientWidth } = archetypeScrollRef.current
+    if (clientWidth > 0) setArchetypeSlide(Math.round(scrollLeft / clientWidth))
+  }
+
+  function scrollToArchetype(i: number) {
+    if (!archetypeScrollRef.current) return
+    archetypeScrollRef.current.scrollTo({ left: i * archetypeScrollRef.current.clientWidth, behavior: 'smooth' })
+  }
 
   const scatterData = useMemo(() =>
     stats
       .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3)
       .map(s => ({ name: s.player.name, goals: s.goals, assists: s.assists })),
+    [stats],
+  )
+
+  const defensiveScatterData = useMemo(() =>
+    stats
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3)
+      .map(s => ({ name: s.player.name, tackles: s.tackles, interceptions: s.interceptions })),
+    [stats],
+  )
+
+  const passingScatterData = useMemo(() =>
+    stats
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3 && s.pass_attempts > 0)
+      .map(s => ({ name: s.player.name, pass_attempts: s.pass_attempts, pass_accuracy: s.pass_accuracy })),
     [stats],
   )
 
@@ -476,49 +505,125 @@ export default function Season() {
         {scatterData.length > 0 && (
           <section>
             <SectionHeading>Player Archetypes</SectionHeading>
-            <div className={`${CARD} p-4`}>
-              <p className={`text-xs ${MUTED} mb-1`}>Goals vs assists — tap a dot to see details (min 3 games)</p>
-              {archetypePopup && (
-                <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl bg-[#F5F4F2] dark:bg-[#1a1e21]">
-                  <div>
-                    <span className="text-sm font-semibold">{archetypePopup.name}</span>
-                    <span className={`text-sm ${MUTED} ml-3`}>{archetypePopup.goals}G · {archetypePopup.assists}A</span>
-                  </div>
-                  <button onClick={() => setArchetypePopup(null)} className={`text-xs ${MUTED} hover:text-mvf`}>✕</button>
+
+            {(() => {
+              const chart1 = (
+                <div className={`${CARD} p-4`}>
+                  <p className={`text-xs ${MUTED} mb-1`}>Goals vs assists — tap a dot to see details (min 3 games)</p>
+                  {archetypePopup && (
+                    <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl bg-[#F5F4F2] dark:bg-[#1a1e21]">
+                      <div>
+                        <span className="text-sm font-semibold">{archetypePopup.name}</span>
+                        <span className={`text-sm ${MUTED} ml-3`}>{archetypePopup.goals}G · {archetypePopup.assists}A</span>
+                      </div>
+                      <button onClick={() => setArchetypePopup(null)} className={`text-xs ${MUTED} hover:text-mvf`}>✕</button>
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height={260}>
+                    <ScatterChart margin={{ top: 20, right: 30, left: -10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID(isDark)} />
+                      <XAxis type="number" dataKey="goals" name="Goals" allowDecimals={false} tick={AXIS_TICK}
+                        label={{ value: 'Goals', position: 'insideBottom', offset: -10, fontSize: 11, fill: '#737373' }} />
+                      <YAxis type="number" dataKey="assists" name="Assists" allowDecimals={false} tick={AXIS_TICK}
+                        label={{ value: 'Assists', angle: -90, position: 'insideLeft', offset: 15, fontSize: 11, fill: '#737373' }} />
+                      <Tooltip content={() => null} />
+                      <Scatter data={scatterData} shape={(props: unknown) => ScatterDot(props as Record<string, unknown>)}
+                        onClick={(data: unknown) => { const d = data as { name: string; goals: number; assists: number }; setArchetypePopup(d) }}
+                        style={{ cursor: 'pointer' }} />
+                    </ScatterChart>
+                  </ResponsiveContainer>
                 </div>
-              )}
-              <ResponsiveContainer width="100%" height={280}>
-                <ScatterChart margin={{ top: 20, right: 30, left: -10, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={GRID(isDark)} />
-                  <XAxis
-                    type="number"
-                    dataKey="goals"
-                    name="Goals"
-                    allowDecimals={false}
-                    tick={AXIS_TICK}
-                    label={{ value: 'Goals', position: 'insideBottom', offset: -10, fontSize: 11, fill: '#737373' }}
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="assists"
-                    name="Assists"
-                    allowDecimals={false}
-                    tick={AXIS_TICK}
-                    label={{ value: 'Assists', angle: -90, position: 'insideLeft', offset: 15, fontSize: 11, fill: '#737373' }}
-                  />
-                  <Tooltip content={() => null} />
-                  <Scatter
-                    data={scatterData}
-                    shape={(props: unknown) => ScatterDot(props as Record<string, unknown>)}
-                    onClick={(data: unknown) => {
-                      const d = data as { name: string; goals: number; assists: number }
-                      setArchetypePopup(d)
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
+              )
+
+              const chart2 = (
+                <div className={`${CARD} p-4`}>
+                  <p className={`text-xs ${MUTED} mb-1`}>Tackles vs interceptions — tap a dot to see details (min 3 games)</p>
+                  {defPopup && (
+                    <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl bg-[#F5F4F2] dark:bg-[#1a1e21]">
+                      <div>
+                        <span className="text-sm font-semibold">{defPopup.name}</span>
+                        <span className={`text-sm ${MUTED} ml-3`}>{defPopup.tackles} tackles · {defPopup.interceptions} int</span>
+                      </div>
+                      <button onClick={() => setDefPopup(null)} className={`text-xs ${MUTED} hover:text-mvf`}>✕</button>
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height={260}>
+                    <ScatterChart margin={{ top: 20, right: 30, left: -10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID(isDark)} />
+                      <XAxis type="number" dataKey="tackles" name="Tackles" allowDecimals={false} tick={AXIS_TICK}
+                        label={{ value: 'Tackles', position: 'insideBottom', offset: -10, fontSize: 11, fill: '#737373' }} />
+                      <YAxis type="number" dataKey="interceptions" name="Interceptions" allowDecimals={false} tick={AXIS_TICK}
+                        label={{ value: 'Interceptions', angle: -90, position: 'insideLeft', offset: 20, fontSize: 11, fill: '#737373' }} />
+                      <Tooltip content={() => null} />
+                      <Scatter data={defensiveScatterData} shape={(props: unknown) => ScatterDot(props as Record<string, unknown>)}
+                        onClick={(data: unknown) => { const d = data as { name: string; tackles: number; interceptions: number }; setDefPopup(d) }}
+                        style={{ cursor: 'pointer' }} />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              )
+
+              const chart3 = (
+                <div className={`${CARD} p-4`}>
+                  <p className={`text-xs ${MUTED} mb-1`}>Pass accuracy vs volume — tap a dot to see details (min 3 games)</p>
+                  {pasPopup && (
+                    <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-xl bg-[#F5F4F2] dark:bg-[#1a1e21]">
+                      <div>
+                        <span className="text-sm font-semibold">{pasPopup.name}</span>
+                        <span className={`text-sm ${MUTED} ml-3`}>{pasPopup.pass_accuracy}% · {pasPopup.pass_attempts} attempts</span>
+                      </div>
+                      <button onClick={() => setPasPopup(null)} className={`text-xs ${MUTED} hover:text-mvf`}>✕</button>
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height={260}>
+                    <ScatterChart margin={{ top: 20, right: 30, left: -10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID(isDark)} />
+                      <XAxis type="number" dataKey="pass_attempts" name="Attempts" allowDecimals={false} tick={AXIS_TICK}
+                        label={{ value: 'Pass attempts', position: 'insideBottom', offset: -10, fontSize: 11, fill: '#737373' }} />
+                      <YAxis type="number" dataKey="pass_accuracy" name="Accuracy" domain={[0, 100]} tick={AXIS_TICK}
+                        tickFormatter={(v: number) => `${v}%`}
+                        label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft', offset: 15, fontSize: 11, fill: '#737373' }} />
+                      <Tooltip content={() => null} />
+                      <Scatter data={passingScatterData} shape={(props: unknown) => ScatterDot(props as Record<string, unknown>)}
+                        onClick={(data: unknown) => { const d = data as { name: string; pass_attempts: number; pass_accuracy: number }; setPasPopup(d) }}
+                        style={{ cursor: 'pointer' }} />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              )
+
+              return (
+                <>
+                  {/* Mobile: swipe carousel */}
+                  <div className="md:hidden">
+                    <div
+                      ref={archetypeScrollRef}
+                      onScroll={handleArchetypeScroll}
+                      className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth"
+                      style={{ scrollbarWidth: 'none' }}
+                    >
+                      {[chart1, chart2, chart3].map((chart, i) => (
+                        <div key={i} className="shrink-0 w-full snap-start">{chart}</div>
+                      ))}
+                    </div>
+                    <div className="flex justify-center gap-2 mt-3">
+                      {[0, 1, 2].map(i => (
+                        <button key={i} onClick={() => scrollToArchetype(i)}
+                          className={`rounded-full transition-all duration-200 ${archetypeSlide === i ? 'w-5 h-2 bg-mvf' : 'w-2 h-2 bg-gray-300 dark:bg-gray-600'}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Desktop: stacked */}
+                  <div className="hidden md:block space-y-4">
+                    {chart1}
+                    {chart2}
+                    {chart3}
+                  </div>
+                </>
+              )
+            })()}
           </section>
         )}
 
