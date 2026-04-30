@@ -10,7 +10,7 @@ interface Props {
 
 // ── Rating helpers ────────────────────────────────────────────────────────────
 
-const TOTW_CAP = 50;
+const TOTW_CAP = 65;
 
 function toRating(score: number): number {
   const normalised = Math.min(score / TOTW_CAP, 1);

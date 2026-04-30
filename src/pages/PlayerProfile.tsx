@@ -110,11 +110,11 @@ export default function PlayerProfile() {
 
     const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 5);
 
-    const gaPerGame  = (s: typeof playerStats) => s.goal_involvements / s.games_played;
+    const gaPerGame = (s: typeof playerStats) => s.goal_involvements / s.games_played;
     const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
     const totalShots = (s: typeof playerStats) => s.shots_on_target + s.shots_off_target;
 
-    const gaMax  = Math.max(...outfield.map(gaPerGame), 0.01);
+    const gaMax = Math.max(...outfield.map(gaPerGame), 0.01);
     const defMax = Math.max(...outfield.map(defPerGame), 0.01);
     const shoMax = Math.max(...outfield.filter(s => totalShots(s) >= 5).map(s => s.shot_accuracy), 0.01);
     const pasMax = Math.max(...outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy), 0.01);
@@ -123,11 +123,11 @@ export default function PlayerProfile() {
 
     const weightedNorm = (s: typeof playerStats) => {
       const dims: { norm: number; weight: number }[] = [
-        { norm: gaPerGame(s) / gaMax,  weight: 0.40 },
+        { norm: gaPerGame(s) / gaMax, weight: 0.40 },
         { norm: defPerGame(s) / defMax, weight: 0.25 },
       ];
-      if (totalShots(s) >= 5)    dims.push({ norm: s.shot_accuracy / shoMax, weight: 0.20 });
-      if (s.pass_attempts > 0)   dims.push({ norm: s.pass_accuracy / pasMax, weight: 0.15 });
+      if (totalShots(s) >= 5) dims.push({ norm: s.shot_accuracy / shoMax, weight: 0.20 });
+      if (s.pass_attempts > 0) dims.push({ norm: s.pass_accuracy / pasMax, weight: 0.15 });
       const totalW = dims.reduce((sum, d) => sum + d.weight, 0);
       return dims.reduce((sum, d) => sum + d.norm * (d.weight / totalW), 0);
     };
@@ -136,15 +136,15 @@ export default function PlayerProfile() {
 
     if (playerStats.games_played < 3) return { outfieldOverall: null, outfieldScores: scores, futStats: null };
 
-    const ga  = gaPerGame(playerStats);
+    const ga = gaPerGame(playerStats);
     const def = defPerGame(playerStats);
     const sho = totalShots(playerStats) >= 5 ? playerStats.shot_accuracy : null;
     const pas = playerStats.pass_attempts > 0 ? playerStats.pass_accuracy : null;
 
     const fs = {
-      ATT: { val: scale(ga, gaMax),   label: "Goal involvements per game" },
-      SHO: sho !== null ? { val: scale(sho, shoMax), label: "Shot accuracy %" }   : null,
-      PAS: pas !== null ? { val: scale(pas, pasMax), label: "Pass accuracy %" }    : null,
+      ATT: { val: scale(ga, gaMax), label: "Goal involvements per game" },
+      SHO: sho !== null ? { val: scale(sho, shoMax), label: "Shot accuracy %" } : null,
+      PAS: pas !== null ? { val: scale(pas, pasMax), label: "Pass accuracy %" } : null,
       DEF: { val: scale(def, defMax), label: "Defensive actions per game" },
     };
 
@@ -465,7 +465,7 @@ export default function PlayerProfile() {
           </section>
         )}
 
-        {/* Goals reel */}
+        {/* Goals reel
         {(eventsLoading || goalClips.length > 0) && (
           <>
             <section className="space-y-3">
@@ -524,7 +524,7 @@ export default function PlayerProfile() {
               <VideoModal src={activeClip.src} label={activeClip.label} onClose={() => setActiveClip(null)} />
             )}
           </>
-        )}
+        )} */}
 
         <PlayerCharts
           gameBreakdown={gameBreakdown}

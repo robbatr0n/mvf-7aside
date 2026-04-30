@@ -51,24 +51,21 @@ function PlayerPin({
   return (
     <div className="flex flex-col items-center gap-0.5">
       <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-          isKeeper
-            ? "bg-yellow-500/20 border-yellow-400"
-            : isMotm
-              ? "bg-amber-400/20 border-amber-400"
-              : "bg-[#FFFFFF]/20 border-white"
-        }`}
+        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isKeeper
+          ? "bg-yellow-500/20 border-yellow-400"
+          : isMotm
+            ? "bg-amber-400/20 border-amber-400"
+            : "bg-[#FFFFFF]/20 border-white"
+          }`}
       >
         <div
-          className={`w-2.5 h-2.5 rounded-full ${
-            isKeeper ? "bg-yellow-400" : isMotm ? "bg-amber-400" : "bg-[#FFFFFF]"
-          }`}
+          className={`w-2.5 h-2.5 rounded-full ${isKeeper ? "bg-yellow-400" : isMotm ? "bg-amber-400" : "bg-[#FFFFFF]"
+            }`}
         />
       </div>
       <span
-        className={`text-xs font-medium text-center leading-tight max-w-[64px] drop-shadow ${
-          isKeeper ? "text-yellow-300" : isMotm ? "text-amber-300" : "text-white"
-        }`}
+        className={`text-xs font-medium text-center leading-tight max-w-[64px] drop-shadow ${isKeeper ? "text-yellow-300" : isMotm ? "text-amber-300" : "text-white"
+          }`}
       >
         {name}
       </span>
@@ -161,7 +158,7 @@ export default function TeamOfTheSeason({
   const defenders = hasKeeper ? activeTeam.outfield.slice(3, 6) : activeTeam.outfield.slice(4, 7);
 
   const TOTS_CAP = 40
-  const TOTW_CAP = 50
+  const TOTW_CAP = 65
 
   const getRating = (score: number) => {
     const cap = mode === 'alltime' ? TOTS_CAP : TOTW_CAP
