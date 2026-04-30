@@ -10,7 +10,6 @@ import { calculatePlayerGameBreakdown, calculateGoalkeeperGameBreakdown } from "
 import { calculateAwards } from "../utils/awards";
 import PlayerCharts from "../components/profile/PlayerCharts";
 import PassingHub from "../components/profile/PassingHub";
-import VideoModal from "../components/shared/VideoModal";
 import PLMatchCard from "../components/shared/PLMatchCard";
 import { useTeamStats } from "../hooks/useTeamStats";
 import statBoosts from "../data/statBoosts.json";
@@ -40,7 +39,6 @@ export default function PlayerProfile() {
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
   const { stats } = useStats(players, events, games, gamePlayers);
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
-  const [activeClip, setActiveClip] = useState<{ src: string; label: string } | null>(null);
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
 
@@ -351,9 +349,7 @@ export default function PlayerProfile() {
     );
   }
 
-  const goalClips = events.filter(
-    (e) => e.player_id === id && e.event_type === "goal" && e.clip_url,
-  );
+
 
   return (
     <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
