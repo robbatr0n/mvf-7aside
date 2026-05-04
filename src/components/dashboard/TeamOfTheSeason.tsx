@@ -12,6 +12,7 @@ import {
   calculateTeamOfTheWeek,
   type TeamOfTheSeasonPlayer,
 } from "../../utils/stats";
+import { TOTS_CAP, TOTW_CAP } from "../../utils/constants";
 
 interface Props {
   stats: PlayerStats[];
@@ -156,9 +157,6 @@ export default function TeamOfTheSeason({
   const forwards = activeTeam.outfield.slice(0, 1);
   const mids = hasKeeper ? activeTeam.outfield.slice(1, 3) : activeTeam.outfield.slice(1, 4);
   const defenders = hasKeeper ? activeTeam.outfield.slice(3, 6) : activeTeam.outfield.slice(4, 7);
-
-  const TOTS_CAP = 40
-  const TOTW_CAP = 65
 
   const getRating = (score: number) => {
     const cap = mode === 'alltime' ? TOTS_CAP : TOTW_CAP

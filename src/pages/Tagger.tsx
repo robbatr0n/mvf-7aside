@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { TAGGER_PASSWORD } from "../constants";
+
+const TAGGER_PASSWORD = import.meta.env.VITE_TAGGER_PASSWORD;
 import { useGames } from "../hooks/useGames";
 import { setGameResult } from "../services/games";
 import GameSetup from "../components/tagger/GameSetup";

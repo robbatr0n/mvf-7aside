@@ -6,6 +6,7 @@ import { useGamePlayers } from '../hooks/useGamePlayers'
 import { useStats } from '../hooks/useStats'
 import { useGoalkeeperStats } from '../hooks/useGoalKeeperStats'
 import { calculateGameSummaries, calculateTeamOfTheWeek } from '../utils/stats'
+import { MIN_GAMES_DISPLAY, MIN_SHOTS_LEADERBOARD } from '../utils/constants'
 import { useTheme } from '../hooks/useTheme'
 import {
   LineChart,
@@ -180,10 +181,10 @@ export default function Season() {
 
   const winRateData = useMemo(() => {
     const outfield = stats
-      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3)
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= MIN_GAMES_DISPLAY)
       .map(s => ({ name: s.player.name, win_rate: s.win_rate, games: s.games_played, isGK: false }))
     const gk = goalkeeperStats
-      .filter(g => g.games >= 3)
+      .filter(g => g.games >= MIN_GAMES_DISPLAY)
       .map(g => ({ name: g.player.name, win_rate: g.win_rate, games: g.games, isGK: true }))
     return [...outfield, ...gk].sort((a, b) => b.win_rate - a.win_rate)
   }, [stats, goalkeeperStats])
@@ -207,28 +208,28 @@ export default function Season() {
 
   const scatterData = useMemo(() =>
     stats
-      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3)
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= MIN_GAMES_DISPLAY)
       .map(s => ({ name: s.player.name, goals: s.goals, assists: s.assists })),
     [stats],
   )
 
   const defensiveScatterData = useMemo(() =>
     stats
-      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3)
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= MIN_GAMES_DISPLAY)
       .map(s => ({ name: s.player.name, tackles: s.tackles, interceptions: s.interceptions })),
     [stats],
   )
 
   const passingScatterData = useMemo(() =>
     stats
-      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= 3 && s.pass_attempts > 0)
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.games_played >= MIN_GAMES_DISPLAY && s.pass_attempts > 0)
       .map(s => ({ name: s.player.name, pass_attempts: s.pass_attempts, pass_accuracy: s.pass_accuracy })),
     [stats],
   )
 
   const shotProfileData = useMemo(() =>
     stats
-      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.shots_on_target + s.shots_off_target >= 10)
+      .filter(s => !s.player.is_guest && !s.player.is_goalkeeper && s.shots_on_target + s.shots_off_target >= MIN_SHOTS_LEADERBOARD)
       .sort((a, b) => b.shot_accuracy - a.shot_accuracy)
       .map(s => ({
         name: s.player.name,

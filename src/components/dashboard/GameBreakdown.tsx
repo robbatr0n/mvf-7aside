@@ -10,7 +10,8 @@ interface Props {
 
 // ── Rating helpers ────────────────────────────────────────────────────────────
 
-const TOTW_CAP = 65;
+import { TOTW_CAP } from "../../utils/constants";
+import { calcGameScore } from "../../utils/stats/scoring";
 
 function toRating(score: number): number {
   const normalised = Math.min(score / TOTW_CAP, 1);
@@ -166,17 +167,7 @@ function PlayerRatingsPanel({
 
   function score(player: Player) {
     const pe = gameEvents.filter((e) => e.player_id === player.id);
-    const goals = pe.filter((e) => e.event_type === "goal").length;
-    const assists = pe.filter((e) => e.event_type === "assist").length;
-    const sot = pe.filter((e) => e.event_type === "shot_on_target").length;
-    const kp = pe.filter((e) => e.event_type === "key_pass").length;
-    const tackles = pe.filter((e) => e.event_type === "tackle").length;
-    const interceptions = pe.filter((e) => e.event_type === "interception").length;
-    const passCompleted = pe.filter((e) => e.event_type === "pass_completed").length;
-    const hasPassingEvents = pe.some(
-      (e) => e.event_type === "pass_completed" || e.event_type === "pass_received" || e.event_type === "pass_failed"
-    );
-    return goals * 4 + assists * 2.5 + sot * 0.5 + kp * 0.5 + tackles + interceptions + (hasPassingEvents ? passCompleted * 0.2 : 0);
+    return calcGameScore(pe);
   }
 
   const allPlayers = [

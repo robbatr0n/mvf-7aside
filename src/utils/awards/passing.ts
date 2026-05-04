@@ -1,8 +1,7 @@
 import type { PlayerStats, Player, Event } from '../../types'
 import type { Award } from './types'
 import { topN, runnerUpN, bestSingleGameStat } from './helpers'
-
-const MIN_PASS_ATTEMPTS = 15
+import { MIN_PASS_ATTEMPTS } from '../constants'
 
 export function buildPassingAwards(
     eligibleStats: PlayerStats[],

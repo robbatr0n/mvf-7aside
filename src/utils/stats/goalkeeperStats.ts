@@ -5,6 +5,8 @@ export interface GKGameBreakdown {
     saves: number
     goalsConceded: number
     cleanSheet: boolean
+    svPct: number | null
+    result: 'W' | 'D' | 'L' | '—'
 }
 
 export function calculateGoalkeeperGameBreakdown(
@@ -31,7 +33,14 @@ export function calculateGoalkeeperGameBreakdown(
                 if (e.team_override !== null) return e.team_override !== keeperTeam
                 return opposingPlayerIds.has(e.player_id)
             }).length
-            return { game, saves, goalsConceded, cleanSheet: goalsConceded === 0 }
+            const totalShots = saves + goalsConceded
+            const svPct = totalShots > 0 ? Math.round((saves / totalShots) * 100) : null
+            const result: GKGameBreakdown['result'] =
+                game.winning_team === null ? '—'
+                : game.winning_team === 0 ? 'D'
+                : game.winning_team === keeperTeam ? 'W'
+                : 'L'
+            return { game, saves, goalsConceded, cleanSheet: goalsConceded === 0, svPct, result }
         })
 }
 

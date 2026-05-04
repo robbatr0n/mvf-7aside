@@ -3,7 +3,7 @@ import { useEvents } from "../hooks/useEvents";
 import { usePlayers } from "../hooks/usePlayers";
 import { useGames } from "../hooks/useGames";
 import { supabase } from "../lib/supabaseClient";
-import { TAGGER_PASSWORD } from "../constants";
+const TAGGER_PASSWORD = import.meta.env.VITE_TAGGER_PASSWORD;
 
 const STORAGE_BASE =
   "https://sidixpwcmmzzpoxbpfbr.supabase.co/storage/v1/object/public/goal-clips/";

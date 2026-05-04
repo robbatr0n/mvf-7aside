@@ -1,8 +1,6 @@
 import type { PlayerStats, Player, Event } from '../../types'
 import type { EventType } from '../../types'
-
-export const MIN_GAMES = 3
-export const MIN_SHOTS = 5
+export { MIN_GAMES, MIN_SHOTS } from '../constants'
 
 type NumericStatKey = {
     [K in keyof PlayerStats]: PlayerStats[K] extends number ? K : never

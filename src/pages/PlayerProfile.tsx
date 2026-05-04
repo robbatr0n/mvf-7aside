@@ -1,19 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { usePlayers } from "../hooks/usePlayers";
-import { useEvents } from "../hooks/useEvents";
-import { useGames } from "../hooks/useGames";
-import { useGamePlayers } from "../hooks/useGamePlayers";
-import { useStats } from "../hooks/useStats";
-import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
-import { calculatePlayerGameBreakdown, calculateGoalkeeperGameBreakdown } from "../utils/stats";
-import { calculateAwards } from "../utils/awards";
+import { usePlayerProfileData } from "../hooks/usePlayerProfileData";
 import PlayerCharts from "../components/profile/PlayerCharts";
 import PassingHub from "../components/profile/PassingHub";
 import PLMatchCard from "../components/shared/PLMatchCard";
-import { useTeamStats } from "../hooks/useTeamStats";
-import statBoosts from "../data/statBoosts.json";
-import { computeAllPLMatches } from "../utils/plMatch";
 
 interface StatRowProps {
   label: string;
@@ -31,285 +21,58 @@ function StatRow({ label, value }: StatRowProps) {
   );
 }
 
+const tierStyles = {
+  gold: {
+    card: "bg-gradient-to-br from-[#2a2000] via-[#1a1500] to-[#221a00] border-[rgba(202,162,0,0.4)]",
+    stripe: "bg-gradient-to-br from-[rgba(202,162,0,0.14)] to-transparent",
+    overall: "text-[#f5c842]",
+  },
+  silver: {
+    card: "bg-gradient-to-br from-[#1c1e22] via-[#141618] to-[#1a1c20] border-[rgba(160,170,185,0.3)]",
+    stripe: "bg-gradient-to-br from-[rgba(160,170,185,0.09)] to-transparent",
+    overall: "text-[#c8d0dc]",
+  },
+  base: {
+    card: "bg-[#FFFFFF] dark:bg-[#111518] border-[#D4D3D0] dark:border-[#2a2e31]",
+    stripe: "bg-gradient-to-br from-[rgba(176,0,15,0.05)] to-transparent",
+    overall: "text-[#1C1C1C] dark:text-[#E5E6E3]",
+  },
+} as const;
+
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
-  const { players, loading: playersLoading } = usePlayers();
-  const { events, loading: eventsLoading } = useEvents();
-  const { games, loading: gamesLoading } = useGames();
-  const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers();
-  const { stats } = useStats(players, events, games, gamePlayers);
-  const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
-
-  const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
-
-  const player = players.find((p) => p.id === id);
-  const playerStats = stats.find((s) => s.player.id === id);
-  const gkStats = goalkeeperStats.find((s) => s.player.id === id);
-
-  const { teamOfSeasonIds, totwAppearances, motmAppearances, motmByGame } = useTeamStats(
-    stats, goalkeeperStats, players, events, games, gamePlayers,
-  );
-
-  const isInTots = id ? teamOfSeasonIds.has(id) : false;
-  const totwCount = id ? (totwAppearances.get(id) ?? 0) : 0;
-  const motmCount = id ? (motmAppearances.get(id) ?? 0) : 0;
-
-  const gameBreakdown = useMemo(() => {
-    if (!id) return [];
-    return calculatePlayerGameBreakdown(id, events, games, gamePlayers);
-  }, [id, events, games, gamePlayers]);
-
-  const gkBreakdown = useMemo(() => {
-    if (!id || !player?.is_goalkeeper) return [];
-    return calculateGoalkeeperGameBreakdown(id, events, games, gamePlayers);
-  }, [id, events, games, gamePlayers, player]);
-
-  const { awards, partnership } = useMemo(
-    () => calculateAwards(stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances),
-    [stats, events, games, gamePlayers, players, goalkeeperStats, totwAppearances, motmAppearances],
-  );
-
-  const myAwards = useMemo(() => {
-    const all = [...awards];
-    if (partnership && partnership.players.includes(player?.name ?? "")) {
-      all.push({
-        emoji: partnership.emoji,
-        title: partnership.title,
-        description: partnership.description,
-        winners: partnership.players,
-        value: partnership.value,
-        noWinner: false,
-      });
-    }
-    return all.filter((a) => !a.noWinner && a.winners.includes(player?.name ?? ""));
-  }, [awards, partnership, player]);
-
-  const tierStyles = {
-    gold: {
-      card: "bg-gradient-to-br from-[#2a2000] via-[#1a1500] to-[#221a00] border-[rgba(202,162,0,0.4)]",
-      stripe: "bg-gradient-to-br from-[rgba(202,162,0,0.14)] to-transparent",
-      overall: "text-[#f5c842]",
-    },
-    silver: {
-      card: "bg-gradient-to-br from-[#1c1e22] via-[#141618] to-[#1a1c20] border-[rgba(160,170,185,0.3)]",
-      stripe: "bg-gradient-to-br from-[rgba(160,170,185,0.09)] to-transparent",
-      overall: "text-[#c8d0dc]",
-    },
-    base: {
-      card: "bg-[#FFFFFF] dark:bg-[#111518] border-[#D4D3D0] dark:border-[#2a2e31]",
-      stripe: "bg-gradient-to-br from-[rgba(176,0,15,0.05)] to-transparent",
-      overall: "text-[#1C1C1C] dark:text-[#E5E6E3]",
-    },
-  } as const;
-
-  const { outfieldOverall, outfieldScores, futStats } = useMemo(() => {
-    const empty = { outfieldOverall: null, outfieldScores: [] as { id: string; score: number }[], futStats: null };
-    if (!playerStats) return empty;
-
-    const outfield = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 5);
-
-    const gaPerGame = (s: typeof playerStats) => s.goal_involvements / s.games_played;
-    const defPerGame = (s: typeof playerStats) => s.defensive_actions / s.games_played;
-    const totalShots = (s: typeof playerStats) => s.shots_on_target + s.shots_off_target;
-
-    const gaMax = Math.max(...outfield.map(gaPerGame), 0.01);
-    const defMax = Math.max(...outfield.map(defPerGame), 0.01);
-    const shoMax = Math.max(...outfield.filter(s => totalShots(s) >= 5).map(s => s.shot_accuracy), 0.01);
-    const pasMax = Math.max(...outfield.filter(s => s.pass_attempts > 0).map(s => s.pass_accuracy), 0.01);
-
-    const scale = (val: number, max: number) => Math.round(55 + (val / max) * 44);
-
-    const weightedNorm = (s: typeof playerStats) => {
-      const dims: { norm: number; weight: number }[] = [
-        { norm: gaPerGame(s) / gaMax, weight: 0.40 },
-        { norm: defPerGame(s) / defMax, weight: 0.25 },
-      ];
-      if (totalShots(s) >= 5) dims.push({ norm: s.shot_accuracy / shoMax, weight: 0.20 });
-      if (s.pass_attempts > 0) dims.push({ norm: s.pass_accuracy / pasMax, weight: 0.15 });
-      const totalW = dims.reduce((sum, d) => sum + d.weight, 0);
-      return dims.reduce((sum, d) => sum + d.norm * (d.weight / totalW), 0);
-    };
-
-    const scores = outfield.map(s => ({ id: s.player.id, score: weightedNorm(s) }));
-
-    if (playerStats.games_played < 3) return { outfieldOverall: null, outfieldScores: scores, futStats: null };
-
-    const ga = gaPerGame(playerStats);
-    const def = defPerGame(playerStats);
-    const sho = totalShots(playerStats) >= 5 ? playerStats.shot_accuracy : null;
-    const pas = playerStats.pass_attempts > 0 ? playerStats.pass_accuracy : null;
-
-    const fs = {
-      ATT: { val: scale(ga, gaMax), label: "Goal involvements per game" },
-      SHO: sho !== null ? { val: scale(sho, shoMax), label: "Shot accuracy %" } : null,
-      PAS: pas !== null ? { val: scale(pas, pasMax), label: "Pass accuracy %" } : null,
-      DEF: { val: scale(def, defMax), label: "Defensive actions per game" },
-    };
-
-    return { outfieldOverall: Math.round(65 + weightedNorm(playerStats) * 26), outfieldScores: scores, futStats: fs };
-  }, [stats, playerStats]);
-
-  const gkOverall = useMemo(() => {
-    if (!gkStats) return null;
-    const max = Math.max(...goalkeeperStats.map(g => g.savePercentage), 0.01);
-    return gkStats.games >= 3 ? Math.round(65 + (gkStats.savePercentage / max) * 26) : null;
-  }, [goalkeeperStats, gkStats]);
-
-  const computedOverall = outfieldOverall ?? gkOverall;
-  const ovrBoost = ((statBoosts as Record<string, Record<string, unknown>>)[player?.name ?? '']?.OVR as number | undefined) ?? 0;
-  const overall = computedOverall !== null ? Math.min(99, computedOverall + ovrBoost) : null;
-
-  const squadRank = useMemo(() => {
-    if (player?.is_goalkeeper && gkStats) {
-      const sorted = [...goalkeeperStats]
-        .map(g => ({ id: g.player.id, score: g.savePercentage }))
-        .sort((a, b) => b.score - a.score);
-      const idx = sorted.findIndex(g => g.id === id);
-      return idx >= 0 ? idx + 1 : null;
-    }
-    if (playerStats) {
-      const boostedScores = outfieldScores.map(o => {
-        const name = stats.find(s => s.player.id === o.id)?.player.name ?? '';
-        const boost = ((statBoosts as Record<string, Record<string, unknown>>)[name]?.OVR as number | undefined) ?? 0;
-        return { id: o.id, ovr: Math.min(99, Math.round(65 + o.score * 26) + boost) };
-      });
-      const sorted = boostedScores.sort((a, b) => b.ovr - a.ovr);
-      const idx = sorted.findIndex(o => o.id === id);
-      return idx >= 0 ? idx + 1 : null;
-    }
-    return null;
-  }, [player, gkStats, goalkeeperStats, playerStats, outfieldScores, stats, id]);
-
-  const tier = (isInTots ? "gold" : totwCount >= 2 ? "silver" : "base") as keyof typeof tierStyles;
-
-  const futGkStats = useMemo(() => {
-    if (!gkStats || gkStats.games < 3) return null;
-    const gks = goalkeeperStats.filter(g => g.games >= 3);
-    const scale = (val: number, vals: number[]) => {
-      const max = Math.max(...vals, 0.01);
-      return Math.round(55 + (val / max) * 44);
-    };
-    const conScore = (g: typeof gkStats) => {
-      const m = motmAppearances.get(g.player.id) ?? 0;
-      const t = totwAppearances.get(g.player.id) ?? 0;
-      return (m * 3 + t) / g.games;
-    };
-    const maxGca = Math.max(...gks.map(g => g.goalsConcededPerGame), 0.01);
-    const gcaScore = Math.round(55 + (1 - gkStats.goalsConcededPerGame / maxGca) * 44);
-    return {
-      SAV: { val: scale(gkStats.savePercentage, gks.map(g => g.savePercentage)), label: "Save percentage" },
-      RFX: { val: scale(gkStats.savesPerGame, gks.map(g => g.savesPerGame)), label: "Saves per game" },
-      CLN: { val: scale(gkStats.cleanSheetPercentage, gks.map(g => g.cleanSheetPercentage)), label: "Clean sheet %" },
-      GCA: { val: gcaScore, label: "Goals conceded per game (lower is better)" },
-      WIN: { val: scale(gkStats.win_rate, gks.map(g => g.win_rate)), label: "Win rate %" },
-      CON: { val: scale(conScore(gkStats), gks.map(conScore)), label: "MOTM & TOTW frequency" },
-    };
-  }, [gkStats, goalkeeperStats, motmAppearances, totwAppearances]);
-
-  type StatMap = Record<string, { val: number; label: string } | null>;
-  const boostedFutStats = useMemo((): StatMap | null => {
-    if (!futStats || !player) return futStats;
-    const boosts = (statBoosts as Record<string, Record<string, unknown>>)[player.name] ?? {};
-    if (Object.keys(boosts).length === 0) return futStats;
-    return Object.fromEntries(
-      Object.entries(futStats).map(([key, stat]) => {
-        if (!stat) return [key, stat];
-        const boost = (boosts[key] as number | undefined) ?? 0;
-        return [key, { ...stat, val: Math.min(99, stat.val + boost) }];
-      })
-    );
-  }, [futStats, player]);
-
-  const plMatch = useMemo(() => {
-    if (!player) return null;
-    const boosts = (statBoosts as Record<string, Record<string, unknown>>)[player.name] ?? {};
-    const override = boosts['PLMatch'] as { name: string; team: string; pos?: string } | undefined;
-    if (override) return { name: override.name, club: override.team, position: override.pos ?? '' };
-    const allMatches = computeAllPLMatches(stats, goalkeeperStats);
-    const match = allMatches.get(player.id);
-    return match ? { name: match.name, club: match.club, position: match.position } : null;
-  }, [player, stats, goalkeeperStats]);
-
-  const bestGame = useMemo(() => {
-    if (gameBreakdown.length === 0) return null;
-    return gameBreakdown.reduce((best, g) =>
-      g.goal_involvements > best.goal_involvements ? g : best,
-    );
-  }, [gameBreakdown]);
+  const {
+    loading,
+    player,
+    playerStats,
+    gkStats,
+    players,
+    events,
+    gamePlayers,
+    stats,
+    isInTots,
+    totwCount,
+    motmCount,
+    motmByGame,
+    myAwards,
+    overall,
+    squadRank,
+    tier,
+    futStats,
+    futGkStats,
+    plMatch,
+    bestGame,
+    gameBreakdown,
+    gkBreakdown,
+    sortedGameBreakdown,
+    gameSortKey,
+    handleGameSort,
+    sortedGkGames,
+    gkSortKey,
+    handleGkSort,
+  } = usePlayerProfileData(id);
 
   const [awardsExpanded, setAwardsExpanded] = useState(false);
-  const [gameSortKey, setGameSortKey] = useState("date");
-  const [gameSortDir, setGameSortDir] = useState<"asc" | "desc">("desc");
-
-  function handleGameSort(key: string) {
-    if (key === gameSortKey) setGameSortDir(d => d === "desc" ? "asc" : "desc");
-    else { setGameSortKey(key); setGameSortDir("desc"); }
-  }
-
-  const RESULT_VAL: Record<string, number> = { W: 3, D: 1, L: 0 };
-
-  const sortedGameBreakdown = useMemo(() => {
-    return [...gameBreakdown].sort((a, b) => {
-      const dir = (v: number) => gameSortDir === "desc" ? -v : v;
-      if (gameSortKey === "date") return dir(new Date(a.game.date).getTime() - new Date(b.game.date).getTime());
-      if (gameSortKey === "result") {
-        const teamA = gamePlayers.find(gp => gp.game_id === a.game.id && gp.player_id === id)?.team;
-        const teamB = gamePlayers.find(gp => gp.game_id === b.game.id && gp.player_id === id)?.team;
-        const rA = a.game.winning_team === null ? "—" : a.game.winning_team === 0 ? "D" : a.game.winning_team === teamA ? "W" : "L";
-        const rB = b.game.winning_team === null ? "—" : b.game.winning_team === 0 ? "D" : b.game.winning_team === teamB ? "W" : "L";
-        return dir((RESULT_VAL[rA] ?? -1) - (RESULT_VAL[rB] ?? -1));
-      }
-      if (gameSortKey === "motm") {
-        const aM = motmByGame.get(a.game.id)?.id === id ? 1 : 0;
-        const bM = motmByGame.get(b.game.id)?.id === id ? 1 : 0;
-        return dir(aM - bM);
-      }
-      const aVal = (a as unknown as Record<string, number>)[gameSortKey] ?? 0;
-      const bVal = (b as unknown as Record<string, number>)[gameSortKey] ?? 0;
-      return dir(aVal - bVal);
-    });
-  }, [gameBreakdown, gameSortKey, gameSortDir, gamePlayers, id, motmByGame]);
-
-  const [gkSortKey, setGkSortKey] = useState("date");
-  const [gkSortDir, setGkSortDir] = useState<"asc" | "desc">("desc");
-
-  function handleGkSort(key: string) {
-    const lowerBetter = key === "goalsConceded";
-    if (key === gkSortKey) setGkSortDir(d => d === "desc" ? "asc" : "desc");
-    else { setGkSortKey(key); setGkSortDir(lowerBetter ? "asc" : "desc"); }
-  }
-
-  const sortedGkGames = useMemo(() => {
-    const gkGames = games
-      .filter(g => gamePlayers.some(gp => gp.game_id === g.id && gp.player_id === id))
-      .map(game => {
-        const keeperEntry = gamePlayers.find(gp => gp.game_id === game.id && gp.player_id === id);
-        const keeperTeam = keeperEntry?.team;
-        const gameEvents = events.filter(e => e.game_id === game.id);
-        const opposingPlayerIds = new Set(gamePlayers.filter(gp => gp.game_id === game.id && gp.team !== keeperTeam).map(gp => gp.player_id));
-        const saves = gameEvents.filter(e => e.event_type === "shot_on_target" && e.related_event_id === null && opposingPlayerIds.has(e.player_id)).length;
-        const goalsConceded = gameEvents.filter(e => {
-          if (e.event_type !== "goal") return false;
-          if (e.team_override !== null) return e.team_override !== keeperTeam;
-          return opposingPlayerIds.has(e.player_id);
-        }).length;
-        const totalShots = saves + goalsConceded;
-        const svPct = totalShots > 0 ? Math.round((saves / totalShots) * 100) : null;
-        const cleanSheet = goalsConceded === 0;
-        const result = game.winning_team === null ? "—" : game.winning_team === 0 ? "D" : game.winning_team === keeperTeam ? "W" : "L";
-        return { game, saves, goalsConceded, svPct, cleanSheet, result, keeperTeam };
-      });
-
-    return gkGames.sort((a, b) => {
-      const dir = (v: number) => gkSortDir === "desc" ? -v : v;
-      if (gkSortKey === "date") return dir(new Date(a.game.date).getTime() - new Date(b.game.date).getTime());
-      if (gkSortKey === "result") return dir((RESULT_VAL[a.result] ?? -1) - (RESULT_VAL[b.result] ?? -1));
-      if (gkSortKey === "cleanSheet") return dir((a.cleanSheet ? 1 : 0) - (b.cleanSheet ? 1 : 0));
-      if (gkSortKey === "svPct") return dir((a.svPct ?? -1) - (b.svPct ?? -1));
-      return dir((a[gkSortKey as keyof typeof a] as number ?? 0) - (b[gkSortKey as keyof typeof b] as number ?? 0));
-    });
-  }, [games, gamePlayers, events, id, gkSortKey, gkSortDir]);
-
 
   if (loading) {
     return (
@@ -348,8 +111,6 @@ export default function PlayerProfile() {
       </div>
     );
   }
-
-
 
   return (
     <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
@@ -413,11 +174,11 @@ export default function PlayerProfile() {
               </div>
             </div>
             {/* Stat grid */}
-            {(boostedFutStats || futGkStats) && (
+            {(futStats || futGkStats) && (
               <div className={`relative mt-4 pt-4 border-t ${tier === "base" ? "border-[#D4D3D0] dark:border-[#2a2e31]" : "border-white/10"}`}>
                 <div className="grid grid-cols-4 gap-1">
-                  {(boostedFutStats
-                    ? (Object.entries(boostedFutStats).filter(([, v]) => v !== null) as [string, { val: number; label: string }][])
+                  {(futStats
+                    ? (Object.entries(futStats).filter(([, v]) => v !== null) as [string, { val: number; label: string }][])
                     : (Object.entries(futGkStats!) as [string, { val: number; label: string }][])
                   ).map(([key, stat]) => (
                     <div key={key} className="text-center cursor-help" title={stat.label}>
@@ -460,67 +221,6 @@ export default function PlayerProfile() {
             )}
           </section>
         )}
-
-        {/* Goals reel
-        {(eventsLoading || goalClips.length > 0) && (
-          <>
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-600 dark:text-[#9CA3AF]">Goals</h2>
-                {!eventsLoading && goalClips.length > 0 && (
-                  <Link to={`/player/${id}/goals`} className="text-gray-600 dark:text-[#9CA3AF] hover:text-[#1C1C1C] dark:hover:text-[#E5E6E3] text-xs transition-colors">
-                    {goalClips.length > 3 ? `View all ${goalClips.length} →` : "View all →"}
-                  </Link>
-                )}
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {eventsLoading
-                  ? [...Array(3)].map((_, i) => (
-                    <div key={i} className="flex-none w-36 rounded-xl overflow-hidden animate-pulse">
-                      <div className="w-full aspect-video bg-gray-200 dark:bg-[#1a1e21]" />
-                      <div className="h-3 mx-2 my-2 bg-gray-200 dark:bg-[#1a1e21] rounded" />
-                    </div>
-                  ))
-                  : goalClips.slice(0, 3).map((event, i) => {
-                    const game = games.find((g) => g.id === event.game_id);
-                    return (
-                      <div
-                        key={event.id}
-                        className="flex-none w-36 bg-gray-100 dark:bg-[#111518] border border-[#D4D3D0] dark:border-[#2a2e31] rounded-xl overflow-hidden cursor-pointer"
-                        onClick={() =>
-                          setActiveClip({
-                            src: event.clip_url!,
-                            label: `Goal ${i + 1}${game ? ` — ${new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}`,
-                          })
-                        }
-                      >
-                        <div className="relative">
-                          <video
-                            src={event.clip_url!}
-                            className="w-full aspect-video object-cover"
-                            preload="metadata"
-                            playsInline
-                            muted
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-full bg-black/60 border border-gray-600 flex items-center justify-center">
-                              <div className="w-0 h-0 border-t-[5px] border-b-[5px] border-l-[9px] border-t-transparent border-b-transparent border-l-white ml-0.5" />
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-gray-600 dark:text-[#9CA3AF] text-xs px-2 py-1.5">
-                          {game ? new Date(game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"}
-                        </p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </section>
-            {activeClip && (
-              <VideoModal src={activeClip.src} label={activeClip.label} onClose={() => setActiveClip(null)} />
-            )}
-          </>
-        )} */}
 
         <PlayerCharts
           gameBreakdown={gameBreakdown}
@@ -649,7 +349,6 @@ export default function PlayerProfile() {
                 <StatRow
                   label="Current Scoring Streak"
                   value={playerStats.current_scoring_streak > 0 ? `${playerStats.current_scoring_streak} game${playerStats.current_scoring_streak > 1 ? "s" : ""} 🔥` : "—"}
-
                 />
                 <StatRow
                   label="Best Scoring Streak"
@@ -659,7 +358,6 @@ export default function PlayerProfile() {
                   <StatRow
                     label="Best Game"
                     value={`${bestGame.goal_involvements} G+A (${new Date(bestGame.game.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})`}
-
                   />
                 )}
               </div>

@@ -8,6 +8,7 @@ import type { PlayerGameStats } from '../../utils/stats'
 import type { GKGameBreakdown } from '../../utils/stats'
 import type { PlayerStats } from '../../types'
 import { useTheme } from '../../hooks/useTheme'
+import { GOAL_WEIGHT, ASSIST_WEIGHT, SOT_WEIGHT, KEY_PASS_WEIGHT, TACKLE_WEIGHT, INTERCEPTION_WEIGHT } from '../../utils/constants'
 
 interface Props {
   gameBreakdown: PlayerGameStats[]
@@ -51,7 +52,7 @@ export default function PlayerCharts({ gameBreakdown, gkBreakdown, isGoalkeeper,
     if (isGoalkeeper) return []
     const chrono = [...gameBreakdown].reverse()
     const scores = chrono.map(g =>
-      g.goals * 4 + g.assists * 2.5 + g.shots_on_target * 0.5 + g.key_passes * 0.5 + g.tackles + g.interceptions
+      g.goals * GOAL_WEIGHT + g.assists * ASSIST_WEIGHT + g.shots_on_target * SOT_WEIGHT + g.key_passes * KEY_PASS_WEIGHT + g.tackles * TACKLE_WEIGHT + g.interceptions * INTERCEPTION_WEIGHT
     )
     return chrono.map((g, i) => ({
       date: new Date(g.game.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
@@ -73,7 +74,7 @@ export default function PlayerCharts({ gameBreakdown, gkBreakdown, isGoalkeeper,
   const splitData = useMemo(() => {
     if (isGoalkeeper) return []
     const attacking = gameBreakdown.reduce(
-      (sum, g) => sum + g.goals * 4 + g.assists * 2.5 + g.shots_on_target * 0.5 + g.key_passes * 0.5, 0
+      (sum, g) => sum + g.goals * GOAL_WEIGHT + g.assists * ASSIST_WEIGHT + g.shots_on_target * SOT_WEIGHT + g.key_passes * KEY_PASS_WEIGHT, 0
     )
     const defending = gameBreakdown.reduce((sum, g) => sum + g.tackles + g.interceptions, 0)
     return [

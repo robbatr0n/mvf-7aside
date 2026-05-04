@@ -8,6 +8,7 @@ import { useStats } from '../hooks/useStats'
 import { useGoalkeeperStats } from '../hooks/useGoalKeeperStats'
 import { useTeamStats } from '../hooks/useTeamStats'
 import { calculatePlayerStatsForGames, calculatePlayerGameBreakdown } from '../utils/stats'
+import { GOAL_WEIGHT, ASSIST_WEIGHT, SOT_WEIGHT, KEY_PASS_WEIGHT, TACKLE_WEIGHT, INTERCEPTION_WEIGHT } from '../utils/constants'
 import { getAvatarColor } from '../utils/avatar'
 import { useTheme } from '../hooks/useTheme'
 import { ComposedChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
@@ -112,7 +113,7 @@ export default function Compare() {
     const bd1 = calculatePlayerGameBreakdown(id1, events, games, gamePlayers)
     const bd2 = calculatePlayerGameBreakdown(id2, events, games, gamePlayers)
     const score = (g: typeof bd1[0]) =>
-      Math.round((g.goals * 4 + g.assists * 2.5 + g.shots_on_target * 0.5 + g.key_passes * 0.5 + g.tackles + g.interceptions) * 10) / 10
+      Math.round((g.goals * GOAL_WEIGHT + g.assists * ASSIST_WEIGHT + g.shots_on_target * SOT_WEIGHT + g.key_passes * KEY_PASS_WEIGHT + g.tackles * TACKLE_WEIGHT + g.interceptions * INTERCEPTION_WEIGHT) * 10) / 10
     const map1 = new Map(bd1.map(g => [g.game.date, score(g)]))
     const map2 = new Map(bd2.map(g => [g.game.date, score(g)]))
     const allDates = [...new Set([...map1.keys(), ...map2.keys()])]

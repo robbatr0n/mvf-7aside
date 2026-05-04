@@ -1,5 +1,6 @@
 import plPlayers from '../data/players.json'
 import type { GoalkeeperStats, PlayerStats } from '../types'
+import { MIN_GAMES_COHORT, MIN_SHOTS } from './constants'
 
 export type PLPlayer = typeof plPlayers[0]
 
@@ -43,7 +44,7 @@ export function computeAllPLMatches(
 
   // --- Outfield ---
   const outfieldPL = plPlayers.filter(p => p.position !== 'GK')
-  const eligible = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= 5)
+  const eligible = stats.filter(s => !s.player.is_goalkeeper && s.games_played >= MIN_GAMES_COHORT)
 
   if (eligible.length > 0) {
     const totalSh = (s: PlayerStats) => s.shots_on_target + s.shots_off_target
@@ -51,7 +52,7 @@ export function computeAllPLMatches(
 
     const playerRaw = eligible.map(s => ({
       id: s.player.id,
-      sho: totalSh(s) >= 5 ? s.shot_accuracy : undefined,
+      sho: totalSh(s) >= MIN_SHOTS ? s.shot_accuracy : undefined,
       pas: s.pass_attempts > 0 ? s.pass_accuracy : undefined,
       def: defPg(s),
     }))
@@ -81,7 +82,7 @@ export function computeAllPLMatches(
 
   // --- Goalkeepers ---
   const gkPL = plPlayers.filter(p => p.position === 'GK')
-  const eligibleGKs = goalkeeperStats.filter(g => g.games >= 5)
+  const eligibleGKs = goalkeeperStats.filter(g => g.games >= MIN_GAMES_COHORT)
 
   if (eligibleGKs.length > 0 && gkPL.length > 0) {
     const saveVals = eligibleGKs.map(g => g.savePercentage)
