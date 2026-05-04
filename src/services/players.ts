@@ -1,50 +1,43 @@
-import { supabase } from '../lib/supabaseClient'
 import type { Player } from '../types'
 
-export async function getPlayers(): Promise<Player[]> {
-  const { data, error } = await supabase
-    .from('players')
-    .select('*')
-    .order('name')
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`API error ${res.status}: ${body}`)
+  }
+  if (res.status === 204) return undefined as T
+  return res.json() as Promise<T>
+}
 
-  if (error) throw error
-  return data
+export async function getPlayers(): Promise<Player[]> {
+  return apiFetch<Player[]>('/api/players')
 }
 
 export async function addPlayer(name: string, isGuest = false): Promise<Player> {
-  const { data, error } = await supabase
-    .from('players')
-    .insert({ name, is_guest: isGuest })
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
+  return apiFetch<Player>('/api/players', {
+    method: 'POST',
+    body: JSON.stringify({ name, is_guest: isGuest }),
+  })
 }
 
 export async function updatePlayer(id: string, name: string): Promise<void> {
-  const { error } = await supabase
-    .from('players')
-    .update({ name })
-    .eq('id', id)
-
-  if (error) throw error
+  return apiFetch<void>(`/api/players?id=${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  })
 }
 
 export async function deletePlayer(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('players')
-    .delete()
-    .eq('id', id)
-
-  if (error) throw error
+  return apiFetch<void>(`/api/players?id=${id}`, { method: 'DELETE' })
 }
 
 export async function promoteGuest(id: string, name: string): Promise<void> {
-  const { error } = await supabase
-    .from('players')
-    .update({ name, is_guest: false })
-    .eq('id', id)
-
-  if (error) throw error
+  return apiFetch<void>(`/api/players?id=${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name, is_guest: false }),
+  })
 }

@@ -1,64 +1,50 @@
-import { supabase } from "../lib/supabaseClient";
-import type { Event, EventType } from "../types";
+import type { Event, EventType } from '../types'
+
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`API error ${res.status}: ${body}`)
+  }
+  if (res.status === 204) return undefined as T
+  return res.json() as Promise<T>
+}
 
 export async function getEvents(): Promise<Event[]> {
-  const allEvents: Event[] = []
-  const PAGE_SIZE = 1000
-  let from = 0
-
-  while (true) {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .range(from, from + PAGE_SIZE - 1)
-
-    if (error) throw error
-    if (!data || data.length === 0) break
-
-    allEvents.push(...data)
-
-    if (data.length < PAGE_SIZE) break
-    from += PAGE_SIZE
-  }
-
-  console.log('events fetched:', allEvents.length)
-  return allEvents
+  return apiFetch<Event[]>('/api/events')
 }
+
 export async function addEvent(
   gameId: string,
   playerId: string,
   eventType: EventType,
   relatedEventId?: string,
 ): Promise<Event> {
-  const { data, error } = await supabase
-    .from("events")
-    .insert({
+  return apiFetch<Event>('/api/events', {
+    method: 'POST',
+    body: JSON.stringify({
       game_id: gameId,
       player_id: playerId,
       event_type: eventType,
-      ...(relatedEventId ? { related_event_id: relatedEventId } : {}),
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+      related_event_id: relatedEventId ?? null,
+    }),
+  })
 }
 
 export async function removeEvent(id: string): Promise<void> {
-  const { error } = await supabase.from("events").delete().eq("id", id);
-
-  if (error) throw error;
+  return apiFetch<void>(`/api/events?id=${id}`, { method: 'DELETE' })
 }
 
-export async function removeRelatedEvents(
-  relatedEventId: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from("events")
-    .delete()
-    .eq("related_event_id", relatedEventId);
+export async function removeRelatedEvents(relatedEventId: string): Promise<void> {
+  return apiFetch<void>(`/api/events?related_event_id=${relatedEventId}`, { method: 'DELETE' })
+}
 
-  if (error) throw error;
+export async function updateEventClipUrl(id: string, clip_url: string | null): Promise<void> {
+  return apiFetch<void>(`/api/events?id=${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ clip_url }),
+  })
 }

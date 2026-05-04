@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEvents } from "../hooks/useEvents";
 import { usePlayers } from "../hooks/usePlayers";
 import { useGames } from "../hooks/useGames";
-import { supabase } from "../lib/supabaseClient";
+import { updateEventClipUrl } from "../services/events";
 const TAGGER_PASSWORD = import.meta.env.VITE_TAGGER_PASSWORD;
 
 const STORAGE_BASE =
@@ -48,20 +48,23 @@ export default function ClipManager() {
       ? filename
       : `${STORAGE_BASE}${filename}`;
 
-    const { error } = await supabase
-      .from("events")
-      .update({ clip_url })
-      .eq("id", eventId);
-
-    if (!error) {
+    try {
+      await updateEventClipUrl(eventId, clip_url);
       setSaved((prev) => ({ ...prev, [eventId]: true }));
       refresh();
+    } catch (err) {
+      console.error('Failed to save clip', err);
+    } finally {
+      setSaving((prev) => ({ ...prev, [eventId]: false }));
     }
-    setSaving((prev) => ({ ...prev, [eventId]: false }));
   }
 
   async function handleRemove(eventId: string) {
-    await supabase.from("events").update({ clip_url: null }).eq("id", eventId);
+    try {
+      await updateEventClipUrl(eventId, null);
+    } catch (err) {
+      console.error('Failed to remove clip', err);
+    }
     refresh();
   }
 
