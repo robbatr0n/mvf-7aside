@@ -33,7 +33,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/tag" element={<Tagger />} />
         <Route path="/clips" element={<ClipManager />} />
-        <Route path="/playground" element={<Playground />} />
+        <Route path="/test" element={<Playground />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
