@@ -48,6 +48,7 @@ export interface GamePlayer {
   game_id: string;
   player_id: string;
   team: 1 | 2;
+  is_goalkeeper: boolean;
 }
 
 export interface Event {

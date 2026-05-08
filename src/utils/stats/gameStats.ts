@@ -112,6 +112,10 @@ export function calculateGameSummaries(
                 return team2Players.some(p => p.id === g.scorer.id)
             })
 
+            const gkPlayerIds = new Set(
+                gpEntries.filter(gp => gp.is_goalkeeper).map(gp => gp.player_id)
+            )
+
             return {
                 game,
                 team1Players,
@@ -122,6 +126,7 @@ export function calculateGameSummaries(
                 team1Stats: calcTeamStats(team1Players, gameEvents, team1Goals.length),
                 team2Stats: calcTeamStats(team2Players, gameEvents, team2Goals.length),
                 motm: calculateMotmForGame(game.id, players, events, gamePlayers),
+                gkPlayerIds,
             }
         })
 }

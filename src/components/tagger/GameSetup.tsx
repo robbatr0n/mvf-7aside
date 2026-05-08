@@ -25,6 +25,7 @@ export default function GameSetup({ onReady }: Props) {
   );
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [newPlayerName, setNewPlayerName] = useState("");
+  const [gkId, setGkId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
 
@@ -69,7 +70,11 @@ export default function GameSetup({ onReady }: Props) {
     setSubmitting(true);
     const game = await addGame(date);
     const selected = players.filter((p) => selectedIds.has(p.id));
-    const gamePlayers = Array.from(teamAssignments.entries()).map(([playerId, team]) => ({ playerId, team }));
+    const gamePlayers = Array.from(teamAssignments.entries()).map(([playerId, team]) => ({
+      playerId,
+      team,
+      is_goalkeeper: playerId === gkId,
+    }));
     await addGamePlayers(game.id, gamePlayers);
     onReady(game, selected, teamAssignments);
   }
@@ -265,6 +270,15 @@ export default function GameSetup({ onReady }: Props) {
                         }`}
                     >
                       🟠 Bibs
+                    </button>
+                    <button
+                      onClick={() => setGkId(gkId === player.id ? null : player.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${gkId === player.id
+                        ? "bg-yellow-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:text-white"
+                        }`}
+                    >
+                      GK
                     </button>
                   </div>
                 </div>

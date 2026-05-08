@@ -157,13 +157,19 @@ function PlayerRatingsPanel({
   team1Players,
   team2Players,
   events,
+  gkPlayerIds,
 }: {
   gameId: string;
   team1Players: Player[];
   team2Players: Player[];
   events: Event[];
+  gkPlayerIds: Set<string>;
 }) {
   const gameEvents = events.filter((e) => e.game_id === gameId);
+
+  function isGk(player: Player) {
+    return player.is_goalkeeper || gkPlayerIds.has(player.id);
+  }
 
   function score(player: Player) {
     const pe = gameEvents.filter((e) => e.player_id === player.id);
@@ -176,12 +182,12 @@ function PlayerRatingsPanel({
   ];
 
   const outfield = allPlayers
-    .filter(({ player }) => !player.is_goalkeeper)
+    .filter(({ player }) => !isGk(player))
     .map(({ player, team }) => ({ player, team, s: score(player), rating: toRating(score(player)) }))
     .sort((a, b) => b.s - a.s);
 
   const keepers = allPlayers
-    .filter(({ player }) => player.is_goalkeeper)
+    .filter(({ player }) => isGk(player))
     .map(({ player, team }) => ({ player, team, s: 0, rating: 0 }));
 
   const ranked = [...outfield, ...keepers];
@@ -200,8 +206,8 @@ function PlayerRatingsPanel({
               <span
                 className={`w-2 h-2 rounded-full shrink-0 ${team === 1 ? "bg-[#1C1C1C] dark:bg-[#E5E6E3]" : "bg-orange-500"}`}
               />
-              {player.is_guest || player.is_goalkeeper ? (
-                <span className={`text-sm font-medium truncate ${player.is_goalkeeper ? "text-[#d4a017]" : "text-[#1C1C1C] dark:text-[#E5E6E3]"}`}>
+              {player.is_guest || isGk(player) ? (
+                <span className={`text-sm font-medium truncate ${isGk(player) ? "text-[#d4a017]" : "text-[#1C1C1C] dark:text-[#E5E6E3]"}`}>
                   {player.is_guest ? "Guest" : player.name}
                 </span>
               ) : (
@@ -213,7 +219,7 @@ function PlayerRatingsPanel({
                 </Link>
               )}
             </div>
-            {player.is_goalkeeper ? (
+            {isGk(player) ? (
               <span className="text-[#d4a017] text-sm shrink-0">GK</span>
             ) : (
               <span className="text-gray-600 dark:text-[#9CA3AF] text-sm tabular-nums shrink-0">
@@ -341,6 +347,7 @@ export default function GameBreakdown({ summaries, events }: Props) {
           team1Players={current.team1Players}
           team2Players={current.team2Players}
           events={events}
+          gkPlayerIds={current.gkPlayerIds}
         />
 
         {/* Team stats */}

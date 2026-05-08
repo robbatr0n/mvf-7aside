@@ -28,6 +28,7 @@ export interface GameSummary {
     team1Stats: TeamStats
     team2Stats: TeamStats
     motm: Player | null
+    gkPlayerIds: Set<string>
 }
 
 export interface PlayerGameStats {
