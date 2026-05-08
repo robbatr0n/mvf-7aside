@@ -26,7 +26,7 @@ export default function Dashboard() {
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
 
   const { teamOfSeasonIds, totwAppearances, motmAppearances } = useTeamStats(
-    stats, goalkeeperStats, players, events, games, gamePlayers,
+    stats, players, events, games, gamePlayers,
   );
 
   const gameSummaries = useMemo(

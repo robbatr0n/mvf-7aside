@@ -73,7 +73,7 @@ export default function Compare() {
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers()
   const { stats } = useStats(players, events, games, gamePlayers)
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers)
-  const { totwAppearances, motmAppearances } = useTeamStats(stats, goalkeeperStats, players, events, games, gamePlayers)
+  const { totwAppearances, motmAppearances } = useTeamStats(stats, players, events, games, gamePlayers)
   const { isDark } = useTheme()
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading

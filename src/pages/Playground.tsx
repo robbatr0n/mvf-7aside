@@ -4,7 +4,6 @@ import { useGames } from '../hooks/useGames'
 import { useEvents } from '../hooks/useEvents'
 import { useGamePlayers } from '../hooks/useGamePlayers'
 import { useStats } from '../hooks/useStats'
-import { useGoalkeeperStats } from '../hooks/useGoalKeeperStats'
 import { calcGameScore, calcSeasonScore } from '../utils/stats/scoring'
 import { TOTW_CAP, OVR_FLOOR, OVR_RANGE } from '../utils/constants'
 import { PlayerPin } from '../components/shared/PlayerPin'
@@ -219,8 +218,6 @@ export default function Playground() {
   const { events, loading: eventsLoading } = useEvents()
   const { gamePlayers, loading: gamePlayersLoading } = useGamePlayers()
   const { stats } = useStats(players, events, games, gamePlayers)
-  const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers)
-
   const loading = playersLoading || gamesLoading || eventsLoading || gamePlayersLoading
 
   function handleAuth() {

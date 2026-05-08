@@ -33,7 +33,7 @@ export function usePlayerProfileData(id: string | undefined) {
     const gkStats = goalkeeperStats.find(s => s.player.id === id)
 
     const { teamOfSeasonIds, totwAppearances, motmAppearances, motmByGame } = useTeamStats(
-        stats, goalkeeperStats, players, events, games, gamePlayers,
+        stats, players, events, games, gamePlayers,
     )
 
     const isInTots = id ? teamOfSeasonIds.has(id) : false

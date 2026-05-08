@@ -6,7 +6,6 @@ import { getAvatarColor } from "../utils/avatar";
 import { useEvents } from "../hooks/useEvents";
 import { useGames } from "../hooks/useGames";
 import { useStats } from "../hooks/useStats";
-import { useGoalkeeperStats } from "../hooks/useGoalKeeperStats";
 import { useTeamStats } from "../hooks/useTeamStats";
 
 export default function Players() {
@@ -31,10 +30,8 @@ export default function Players() {
   const { games } = useGames();
   const { stats } = useStats(players, events, games, gamePlayers);
 
-  const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
-
   const { teamOfSeasonIds, totwAppearances, motmAppearances } = useTeamStats(
-    stats, goalkeeperStats, players, events, games, gamePlayers,
+    stats, players, events, games, gamePlayers,
   );
 
   const filteredPlayers = useMemo(() => {

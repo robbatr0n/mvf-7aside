@@ -80,7 +80,7 @@ export default function Awards() {
   const goalkeeperStats = useGoalkeeperStats(players, events, games, gamePlayers);
 
   const { totwAppearances, motmAppearances } = useTeamStats(
-    stats, goalkeeperStats, players, events, games, gamePlayers,
+    stats, players, events, games, gamePlayers,
   );
 
   const { awards, partnership } = useMemo(

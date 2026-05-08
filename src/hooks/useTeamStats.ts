@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import type {
   PlayerStats,
-  GoalkeeperStats,
   Player,
   Event,
   Game,
@@ -16,7 +15,6 @@ import {
 
 export function useTeamStats(
   stats: PlayerStats[],
-  goalkeeperStats: GoalkeeperStats[],
   players: Player[],
   events: Event[],
   games: Game[],
