@@ -23,8 +23,8 @@ export function useTeamStats(
   gamePlayers: GamePlayer[],
 ) {
   const teamOfSeasonIds = useMemo(
-    () => getTeamOfSeasonPlayerIds(stats, goalkeeperStats),
-    [stats, goalkeeperStats],
+    () => getTeamOfSeasonPlayerIds(stats),
+    [stats],
   );
 
   const totwAppearances = useMemo(

@@ -11,6 +11,7 @@ import PlayerGoals from "./pages/PlayerGoals";
 import Players from "./pages/Players";
 import Compare from "./pages/Compare";
 import Season from "./pages/Season";
+import Playground from "./pages/Playground";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/tag" element={<Tagger />} />
         <Route path="/clips" element={<ClipManager />} />
+        <Route path="/playground" element={<Playground />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

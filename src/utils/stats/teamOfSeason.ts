@@ -1,16 +1,12 @@
-import type { Event, Game, GamePlayer, GoalkeeperStats, Player, PlayerStats } from '../../types'
+import type { Event, Game, GamePlayer, Player, PlayerStats } from '../../types'
 import type { TeamOfTheSeason } from './types'
 import { calcGameScore, calcSeasonScore } from './scoring'
 import { MIN_GAMES_COHORT } from '../constants'
 
 export function calculateTeamOfTheSeason(
     stats: PlayerStats[],
-    goalkeeperStats: GoalkeeperStats[],
     minGames: number = MIN_GAMES_COHORT,
 ): TeamOfTheSeason {
-    const bestKeeper =
-        goalkeeperStats.sort((a, b) => b.savePercentage - a.savePercentage)[0] ?? null
-
     const qualifiedOutfield = stats.filter(s => s.games_played >= minGames)
 
     const scored = qualifiedOutfield
@@ -21,12 +17,9 @@ export function calculateTeamOfTheSeason(
         }))
         .sort((a, b) => b.score - a.score)
 
-    const hasKeeper = bestKeeper !== null
     return {
-        goalkeeper: hasKeeper
-            ? { player: bestKeeper!.player, score: bestKeeper!.savePercentage, role: 'goalkeeper' }
-            : null,
-        outfield: scored.slice(0, hasKeeper ? 6 : 7),
+        goalkeeper: null,
+        outfield: scored.slice(0, 7),
     }
 }
 
@@ -56,32 +49,18 @@ export function calculateTeamOfTheWeek(
         })
         .sort((a, b) => b.score - a.score)
 
-    const keeperEntry = gamePlayerEntries.find(gp => {
-        const player = players.find(p => p.id === gp.player_id)
-        return player?.is_goalkeeper
-    })
-
-    const goalkeeper = keeperEntry
-        ? (() => {
-            const player = players.find(p => p.id === keeperEntry.player_id)!
-            return { player, score: 0, role: 'goalkeeper' as const }
-        })()
-        : null
-
     return {
-        goalkeeper,
-        outfield: scored.slice(0, goalkeeper ? 6 : 7),
+        goalkeeper: null,
+        outfield: scored.slice(0, 7),
     }
 }
 
 export function getTeamOfSeasonPlayerIds(
     stats: PlayerStats[],
-    goalkeeperStats: GoalkeeperStats[],
 ): Set<string> {
-    const team = calculateTeamOfTheSeason(stats, goalkeeperStats)
+    const team = calculateTeamOfTheSeason(stats)
     const ids = new Set<string>()
     team.outfield.forEach(p => ids.add(p.player.id))
-    if (team.goalkeeper) ids.add(team.goalkeeper.player.id)
     return ids
 }
 
@@ -167,12 +146,6 @@ export function calculateTotwAppearances(
         team.outfield.forEach(p => {
             appearances.set(p.player.id, (appearances.get(p.player.id) ?? 0) + 1)
         })
-        if (team.goalkeeper) {
-            appearances.set(
-                team.goalkeeper.player.id,
-                (appearances.get(team.goalkeeper.player.id) ?? 0) + 1
-            )
-        }
     })
 
     return appearances

@@ -73,7 +73,6 @@ export default function Dashboard() {
             />
             <TeamOfTheSeason
               stats={stats}
-              goalkeeperStats={goalkeeperStats}
               players={players}
               events={events}
               games={games}

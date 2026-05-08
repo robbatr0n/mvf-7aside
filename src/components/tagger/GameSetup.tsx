@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { usePlayers } from "../../hooks/usePlayers";
-import { addGame } from "../../services/games";
+import { addGame, addGamePlayers } from "../../services/games";
 import type { Game, Player } from "../../types";
 import PlayerManagementPanel from "./PlayerManagementPanel";
 import ExistingGamePicker from "./ExistingGamePicker";
@@ -69,6 +69,8 @@ export default function GameSetup({ onReady }: Props) {
     setSubmitting(true);
     const game = await addGame(date);
     const selected = players.filter((p) => selectedIds.has(p.id));
+    const gamePlayers = Array.from(teamAssignments.entries()).map(([playerId, team]) => ({ playerId, team }));
+    await addGamePlayers(game.id, gamePlayers);
     onReady(game, selected, teamAssignments);
   }
 
@@ -192,11 +194,10 @@ export default function GameSetup({ onReady }: Props) {
                   <button
                     key={player.id}
                     onClick={() => togglePlayer(player.id)}
-                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                      selected
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
-                        : "bg-gray-900 border border-gray-800 text-gray-300 hover:border-gray-600"
-                    }`}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${selected
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
+                      : "bg-gray-900 border border-gray-800 text-gray-300 hover:border-gray-600"
+                      }`}
                   >
                     {player.name}
                   </button>
@@ -249,21 +250,19 @@ export default function GameSetup({ onReady }: Props) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setTeam(player.id, 1)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        teamAssignments.get(player.id) === 1
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:text-white"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${teamAssignments.get(player.id) === 1
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:text-white"
+                        }`}
                     >
                       Non Bibs
                     </button>
                     <button
                       onClick={() => setTeam(player.id, 2)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        teamAssignments.get(player.id) === 2
-                          ? "bg-orange-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:text-white"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${teamAssignments.get(player.id) === 2
+                        ? "bg-orange-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:text-white"
+                        }`}
                     >
                       🟠 Bibs
                     </button>
