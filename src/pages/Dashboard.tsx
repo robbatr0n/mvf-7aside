@@ -41,8 +41,16 @@ export default function Dashboard() {
 
   const loading = playersLoading || eventsLoading || gamesLoading || gamePlayersLoading;
 
+  const latestGameInProgress = !loading && games.length > 0 &&
+    [...games].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].winning_team === null;
+
   return (
     <div className="min-h-screen bg-[#F5F4F2] dark:bg-[#030809] text-[#1C1C1C] dark:text-[#E5E6E3]">
+      {latestGameInProgress && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm text-center py-2.5 px-4">
+          The latest game is currently being analysed — check back soon.
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
         {loading ? (
           <div className="space-y-4">
